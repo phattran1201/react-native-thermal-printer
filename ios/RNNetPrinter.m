@@ -1,6 +1,6 @@
 //
 //  RNNetPrinter.m
-//  RNThermalReceiptPrinter
+//  RNThermalPrinter
 //
 //  Created by MTT on 06/11/19.
 //  Copyright © 2019 Facebook. All rights reserved.

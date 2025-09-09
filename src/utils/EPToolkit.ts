@@ -1,4 +1,4 @@
-import {Buffer} from "buffer";
+import { Buffer } from "buffer";
 import * as iconv from "iconv-lite";
 // import * as Jimp from "jimp";
 
@@ -89,7 +89,7 @@ export function exchange_text(text: string, options: IOptions): Buffer {
         // add bytes for changing font and justifying text
         for (const tag in controller) {
           if (text.substring(i, i + tag.length) === tag) {
-            bytes.concat(controller[tag]);
+            bytes.concat(controller[tag as keyof typeof controller]);
             i += tag.length - 1;
           }
         }
@@ -107,23 +107,38 @@ export function exchange_text(text: string, options: IOptions): Buffer {
   }
   temp.length && bytes.concat(iconv.encode(temp, m_options.encoding));
 
-  // check for "encoding" flag
-  if (typeof m_options["encoding"] === "boolean" && options_controller["encoding"]) {
-    bytes.concat(options_controller["encoding"]);
-  }
+  // // check for "encoding" flag
+  // if (
+  //   typeof m_options["encoding"] === "boolean" &&
+  //   options_controller["encoding"]
+  // ) {
+  //   bytes.concat(options_controller["encoding"]);
+  // }
 
   // check for "tailingLine" flag
-  if (typeof m_options["tailingLine"] === "boolean" && m_options["tailingLine"] && options_controller["tailingLine"]) {
+  if (
+    typeof m_options["tailingLine"] === "boolean" &&
+    m_options["tailingLine"] &&
+    options_controller["tailingLine"]
+  ) {
     bytes.concat(options_controller["tailingLine"]);
   }
 
   // check for "cut" flag
-  if (typeof m_options["cut"] === "boolean" && m_options["cut"] && options_controller["cut"]) {
+  if (
+    typeof m_options["cut"] === "boolean" &&
+    m_options["cut"] &&
+    options_controller["cut"]
+  ) {
     bytes.concat(options_controller["cut"]);
   }
 
   // check for "beep" flag
-  if (typeof m_options["beep"] === "boolean" && m_options["beep"] && options_controller["beep"]) {
+  if (
+    typeof m_options["beep"] === "boolean" &&
+    m_options["beep"] &&
+    options_controller["beep"]
+  ) {
     bytes.concat(options_controller["beep"]);
   }
 

@@ -1,0 +1,22 @@
+require 'json'
+
+package = JSON.parse(File.read(File.join(__dir__, 'package.json')))
+
+Pod::Spec.new do |s|
+  s.name         = "react-native-thermal-printer"
+  s.version      = package['version']
+  s.summary      = package['description']
+  s.license      = package['license']
+
+  s.authors      = package['author']
+  s.homepage     = package['homepage']
+  s.platform     = :ios, "12.0"
+
+  s.source       = { :git => package['repository']['url'], :tag => "v#{s.version}" }
+  s.source_files  = "ios/**/*.{h,m}"
+  s.requires_arc = true
+  s.ios.vendored_libraries = "ios/PrinterSDK/libPrinterSDK.a"
+  s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/PrinterSDK"/**' }
+
+  s.dependency 'React'
+end
