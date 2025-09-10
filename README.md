@@ -22,8 +22,6 @@ yarn add @haroldtran/react-native-thermal-printer
 
 ## ✨ Features
 
-<div align="center">
-
 <table>
   <thead>
     <tr>
@@ -56,13 +54,9 @@ yarn add @haroldtran/react-native-thermal-printer
   </tbody>
 </table>
 
-</div>
-
 <p style="color:#FFA500;"><b>⚠️ Lưu ý:</b> <i>Chức năng <b>In hình & QR qua Bluetooth trên iOS</b> đã được triển khai nhưng <b>chưa kiểm thử thực tế</b>.</i></p>
 
 ## 🖨️ Printer Support
-
-<div align="center">
 
 <table>
   <thead>
@@ -90,8 +84,6 @@ yarn add @haroldtran/react-native-thermal-printer
     </tr>
   </tbody>
 </table>
-
-</div>
 
 ---
 
@@ -135,24 +127,261 @@ Printer.printImageBase64('iVBORw0KGgoAAAANSUhEUgAAAWwAAACIAQMAAAD580PaAAAABGdBTU
 
 ---
 
+## Printer Commands
+
+The `COMMANDS` object provides a comprehensive set of ESC/POS commands for advanced text formatting, hardware control, and paper management. These commands allow you to customize the appearance and behavior of printed output.
+
+### Text Formatting Commands
+
+Use these commands to style your text:
+
+```tsx
+import { COMMANDS } from '@haroldtran/react-native-thermal-printer';
+
+// Example: Bold text
+const boldText = COMMANDS.TEXT_FORMAT.TXT_BOLD_ON + 'Bold Text' + COMMANDS.TEXT_FORMAT.TXT_BOLD_OFF;
+
+// Example: Underlined text
+const underlinedText = COMMANDS.TEXT_FORMAT.TXT_UNDERL_ON + 'Underlined' + COMMANDS.TEXT_FORMAT.TXT_UNDERL_OFF;
+
+// Example: Centered text
+const centeredText = COMMANDS.TEXT_FORMAT.TXT_ALIGN_CT + 'Centered Text';
+
+// Example: Double height and width
+const largeText = COMMANDS.TEXT_FORMAT.TXT_4SQUARE + 'Large Text' + COMMANDS.TEXT_FORMAT.TXT_NORMAL;
+
+// Example: Custom size (width 2, height 3)
+const customSizeText = COMMANDS.TEXT_FORMAT.TXT_CUSTOM_SIZE(2, 3) + 'Custom Size' + COMMANDS.TEXT_FORMAT.TXT_NORMAL;
+```
+
+**Visual Effects:**
+
+- **TXT_BOLD_ON/OFF**: Makes text appear **bold** (darker/thicker).
+- **TXT_UNDERL_ON/OFF**: Adds a line under the text.
+- **TXT_2HEIGHT**: Doubles the height of text (taller characters).
+- **TXT_2WIDTH**: Doubles the width of text (wider characters).
+- **TXT_4SQUARE**: Combines double height and width for larger text.
+- **TXT_ALIGN_CT**: Centers the text on the line.
+- **TXT_CUSTOM_SIZE(w, h)**: Allows custom width (1-8) and height (1-8) scaling.
+
+### Hardware and Control Commands
+
+```tsx
+// Initialize printer
+const initCommand = COMMANDS.HARDWARE.HW_INIT;
+
+// Cut paper
+const cutCommand = COMMANDS.PAPER.PAPER_FULL_CUT;
+
+// Feed paper
+const feedCommand = COMMANDS.FEED_CONTROL_SEQUENCES.CTL_LF;
+```
+
+**Visual/Functional Effects:**
+
+- **HW_INIT**: Resets the printer to default settings.
+- **PAPER_FULL_CUT**: Cuts the paper completely.
+- **CTL_LF**: Advances the paper by one line.
+
+### Horizontal Lines
+
+Pre-defined horizontal lines for 58mm and 80mm printers:
+
+```tsx
+// 58mm printer lines
+const line58 = COMMANDS.HORIZONTAL_LINE.HR_58MM; // ==================================
+
+// 80mm printer lines
+const line80 = COMMANDS.HORIZONTAL_LINE.HR_80MM; // =================================================
+```
+
+These create solid lines across the paper width for visual separation.
+
+### Usage in Print Functions
+
+Combine commands with your print text:
+
+```tsx
+import Printer, { COMMANDS } from '@haroldtran/react-native-thermal-printer';
+
+const receiptText =
+  COMMANDS.TEXT_FORMAT.TXT_ALIGN_CT + 'RECEIPT\n' +
+  COMMANDS.TEXT_FORMAT.TXT_BOLD_ON + 'Item: Coffee\n' +
+  COMMANDS.TEXT_FORMAT.TXT_BOLD_OFF + 'Price: $5.00\n' +
+  COMMANDS.HORIZONTAL_LINE.HR_58MM + '\n' +
+  'Thank you!';
+
+Printer.printText(receiptText);
+```
+
+This will produce a centered, formatted receipt with bold text and a horizontal line.
+
+---
+
 ## 🛠️ API Reference
 
----
+The library exports several modules and utilities for interacting with thermal printers:
 
-| Method                                                                                                                                          | Description                                                      |
-| :---------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `init()`                                                                                                                                        | Initialize the printer module. Call before any other method.     |
-| `getDeviceList()`                                                                                                                               | Get a list of available printers (USB, BLE, NET).                |
-| `connectPrinter(host: string, port: number, timeout?: number)` 🔌                                                                                | Connect to a network printer by host and port. Optional timeout. |
-| `closeConn()`                                                                                                                                   | Close the current printer connection.                            |
-| `printText(text: string, opts?: {})`                                                                                                            | Print plain text. Optional formatting options.                   |
-| `printBill(text: string, opts?: PrinterOptions)                                                                                                 | Print a formatted bill or receipt.                               |
-| `printImage(imgUrl: string, opts?: PrinterImageOptions)`                                                                                        | Print an image from a URL.                                       |
-| `printImageBase64(base64: string, opts?: PrinterImageOptions)`                                                                                  | Print an image from a Base64 string.                             |
-| `printRaw(text: string)` ⚡ *(Android only)*                                                                                                     | Print raw ESC/POS commands (Android only).                       |
-| `printColumnsText(texts: string[], columnWidth: number[], columnAlignment: ColumnAlignment[], columnStyle?: string[], opts?: PrinterOptions)` 📑 | Print text in columns with custom width, alignment, and style.   |
+### Exported Modules
 
----
+- `USBPrinter`: For USB-connected printers (Android only).
+- `BLEPrinter`: For Bluetooth Low Energy printers.
+- `NetPrinter`: For network (LAN/WiFi) printers.
+- `COMMANDS`: A collection of ESC/POS commands for advanced formatting.
+- `NetPrinterEventEmitter`: Event emitter for network printer events.
+- `RN_THERMAL_PRINTER_EVENTS`: Enum for event types.
+
+### Common Methods Across Printers
+
+Each printer module (`USBPrinter`, `BLEPrinter`, `NetPrinter`) supports the following methods:
+
+| Method                                                                                                                                        | Description                                                  |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| `init()`                                                                                                                                      | Initialize the printer module. Call before any other method. |
+| `getDeviceList()`                                                                                                                             | Get a list of available printers.                            |
+| `connectPrinter(...)`                                                                                                                         | Connect to the printer (parameters vary by type).            |
+| `closeConn()`                                                                                                                                 | Close the current printer connection.                        |
+| `printText(text: string, opts?: PrinterOptions)`                                                                                              | Print plain text with optional formatting.                   |
+| `printBill(text: string, opts?: PrinterOptions)`                                                                                              | Print a formatted bill or receipt.                           |
+| `printImage(imgUrl: string, opts?: PrinterImageOptions)`                                                                                      | Print an image from a URL.                                   |
+| `printImageBase64(base64: string, opts?: PrinterImageOptions)`                                                                                | Print an image from a Base64 string.                         |
+| `printRaw(text: string)`                                                                                                                      | Print raw ESC/POS commands (Android only).                   |
+| `printColumnsText(texts: string[], columnWidth: number[], columnAlignment: ColumnAlignment[], columnStyle?: string[], opts?: PrinterOptions)` | Print text in columns.                                       |
+
+### Specific Connection Methods
+
+- **USBPrinter**: `connectPrinter(vendorId: string, productId: string)`
+- **BLEPrinter**: `connectPrinter(inner_mac_address: string)`
+- **NetPrinter**: `connectPrinter(host: string, port: number, timeout?: number)`
+
+### COMMANDS Object Reference
+
+The `COMMANDS` object provides a comprehensive set of ESC/POS commands organized into logical categories:
+
+#### Basic Control Characters
+
+| Name | Description         | Code   |
+| ---- | ------------------- | ------ |
+| LF   | Line Feed           | `\x0a` |
+| ESC  | Escape              | `\x1b` |
+| FS   | Field Separator     | `\x1c` |
+| GS   | Group Separator     | `\x1d` |
+| US   | Unit Separator      | `\x1f` |
+| FF   | Form Feed           | `\x0c` |
+| DLE  | Data Link Escape    | `\x10` |
+| DC1  | Device Control 1    | `\x11` |
+| DC4  | Device Control 4    | `\x14` |
+| EOT  | End of Transmission | `\x04` |
+| NUL  | Null                | `\x00` |
+| EOL  | End of Line         | `\n`   |
+
+#### Horizontal Line Commands
+
+| Command  | Description        | Example                                            |
+| -------- | ------------------ | -------------------------------------------------- |
+| HR_58MM  | Solid line (58mm)  | `==================================`               |
+| HR2_58MM | Dashed line (58mm) | `**********************************`               |
+| HR3_58MM | Dotted line (58mm) | `----------------------------------`               |
+| HR_80MM  | Solid line (80mm)  | `================================================` |
+| HR2_80MM | Dashed line (80mm) | `************************************************` |
+| HR3_80MM | Dotted line (80mm) | `------------------------------------------------` |
+
+#### Feed Control Sequences
+
+| Command | Description         |
+| ------- | ------------------- |
+| CTL_LF  | Print and line feed |
+| CTL_FF  | Form feed           |
+| CTL_CR  | Carriage return     |
+| CTL_HT  | Horizontal tab      |
+| CTL_VT  | Vertical tab        |
+
+#### Line Spacing
+
+| Command    | Description              |
+| ---------- | ------------------------ |
+| LS_DEFAULT | Default line spacing     |
+| LS_SET     | Set line spacing         |
+| LS_SET1    | Alternative line spacing |
+
+#### Hardware Control
+
+| Command   | Description                        |
+| --------- | ---------------------------------- |
+| HW_INIT   | Initialize printer and reset modes |
+| HW_SELECT | Select printer                     |
+| HW_RESET  | Reset printer hardware             |
+
+#### Cash Drawer
+
+| Command   | Description         |
+| --------- | ------------------- |
+| CD_KICK_2 | Send pulse to pin 2 |
+| CD_KICK_5 | Send pulse to pin 5 |
+
+#### Margins
+
+| Command | Description       |
+| ------- | ----------------- |
+| BOTTOM  | Set bottom margin |
+| LEFT    | Set left margin   |
+| RIGHT   | Set right margin  |
+
+#### Paper Cutting
+
+| Command        | Description               |
+| -------------- | ------------------------- |
+| PAPER_FULL_CUT | Full paper cut            |
+| PAPER_PART_CUT | Partial paper cut         |
+| PAPER_CUT_A    | Alternative partial cut A |
+| PAPER_CUT_B    | Alternative partial cut B |
+
+#### Text Formatting
+
+**Text Size & Scaling:**
+
+| Command                        | Description             |
+| ------------------------------ | ----------------------- |
+| TXT_NORMAL                     | Normal text size        |
+| TXT_2HEIGHT                    | Double height           |
+| TXT_2WIDTH                     | Double width            |
+| TXT_4SQUARE                    | Double height and width |
+| TXT_CUSTOM_SIZE(width, height) | Custom size function    |
+
+**Text Height/Width (1-8):**
+
+| Command           | Description               |
+| ----------------- | ------------------------- |
+| TXT_WIDTH[<1-8>]  | Size 1 to 8 TXT_WIDTH[6]  |
+| TXT_HEIGHT[<1-8>] | Size 1 to 8 TXT_HEIGHT[6] |
+
+**Text Decoration:**
+
+| Command        | Description          |
+| -------------- | -------------------- |
+| TXT_UNDERL_OFF | Underline off        |
+| TXT_UNDERL_ON  | Underline on (1-dot) |
+| TXT_UNDERL2_ON | Underline on (2-dot) |
+| TXT_BOLD_OFF   | Bold off             |
+| TXT_BOLD_ON    | Bold on              |
+| TXT_ITALIC_OFF | Italic off           |
+| TXT_ITALIC_ON  | Italic on            |
+
+**Font Types:**
+
+| Command    | Description |
+| ---------- | ----------- |
+| TXT_FONT_A | Font type A |
+| TXT_FONT_B | Font type B |
+| TXT_FONT_C | Font type C |
+
+**Text Alignment:**
+
+| Command      | Description      |
+| ------------ | ---------------- |
+| TXT_ALIGN_LT | Left alignment   |
+| TXT_ALIGN_CT | Center alignment |
+| TXT_ALIGN_RT | Right alignment  |
 
 ---
 

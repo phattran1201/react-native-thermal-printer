@@ -5,6 +5,7 @@ export interface PrinterOptions {
     cut?: boolean;
     tailingLine?: boolean;
     encoding?: string;
+    onError?: (error: Error) => void;
 }
 export declare enum PrinterWidth {
     "58mm" = 58,
@@ -19,6 +20,7 @@ export interface PrinterImageOptions {
     imageHeight?: number;
     printerWidthType?: PrinterWidth;
     paddingX?: number;
+    onError?: (error: Error) => void;
 }
 export interface IUSBPrinter {
     device_name: string;
@@ -105,7 +107,7 @@ declare const NetPrinter: {
     getDeviceList: () => Promise<INetPrinter[]>;
     connectPrinter: (host: string, port: number, timeout?: number) => Promise<INetPrinter>;
     closeConn: () => Promise<void>;
-    printText: (text: string, opts?: {}) => void;
+    printText: (text: string, opts?: PrinterOptions) => void;
     printBill: (text: string, opts?: PrinterOptions) => void;
     /**
      * image url

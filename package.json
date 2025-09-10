@@ -1,13 +1,14 @@
 {
   "name": "@haroldtran/react-native-thermal-printer",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A React Native Library to support USB/BLE/Net printer",
   "author": "Harold Tran <phattran1201@gmail.com>",
   "homepage": "https://github.com/phattran1201/react-native-thermal-printer#readme",
   "main": "dist/index.js",
   "source": "dist/index.js",
   "scripts": {
-    "build": "rimraf ./dist && tsc"
+    "build": "rimraf ./dist && tsc",
+    "prepublish": "yarn build"
   },
   "repository": {
     "type": "git",

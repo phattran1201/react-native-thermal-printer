@@ -107,13 +107,13 @@ export function exchange_text(text: string, options: IOptions): Buffer {
   }
   temp.length && bytes.concat(iconv.encode(temp, m_options.encoding));
 
-  // // check for "encoding" flag
-  // if (
-  //   typeof m_options["encoding"] === "boolean" &&
-  //   options_controller["encoding"]
-  // ) {
-  //   bytes.concat(options_controller["encoding"]);
-  // }
+  // check for "encoding" flag
+  if (
+    typeof m_options["encoding"] === "boolean" &&
+    options_controller["encoding"]
+  ) {
+    bytes.concat(options_controller["encoding"]);
+  }
 
   // check for "tailingLine" flag
   if (
