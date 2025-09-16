@@ -5,6 +5,8 @@ import android.bluetooth.BluetoothDevice;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
+import com.google.gson.Gson;
+
 /**
  * Created by xiesubin on 2017/9/21.
  */
@@ -26,6 +28,7 @@ public class BLEPrinterDevice implements PrinterDevice {
     @Override
     public WritableMap toRNWritableMap() {
         WritableMap deviceMap = Arguments.createMap();
+        deviceMap.putString("device", new Gson().toJson(this.mBluetoothDevice));
         deviceMap.putString("inner_mac_address", this.mPrinterDeviceId.getInnerMacAddress());
         deviceMap.putString("device_name", this.mBluetoothDevice.getName());
         return deviceMap;

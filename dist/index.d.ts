@@ -23,15 +23,20 @@ export interface PrinterImageOptions {
     onError?: (error: Error) => void;
 }
 export interface IUSBPrinter {
+    device: string;
+    manufacturer_name: string;
+    product_name: string;
     device_name: string;
     vendor_id: string;
     product_id: string;
 }
 export interface IBLEPrinter {
+    device: string;
     device_name: string;
     inner_mac_address: string;
 }
 export interface INetPrinter {
+    device: string;
     host: string;
     port: number;
 }

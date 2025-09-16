@@ -5,6 +5,8 @@ import android.hardware.usb.UsbDevice;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
+import com.google.gson.Gson;
+
 /**
  * Created by xiesubin on 2017/9/21.
  */
@@ -31,6 +33,13 @@ public class USBPrinterDevice implements PrinterDevice{
     @Override
     public WritableMap toRNWritableMap() {
         WritableMap deviceMap = Arguments.createMap();
+        deviceMap.putString("device", new Gson().toJson(this.mDevice));
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            deviceMap.putString("manufacturer_name", this.mDevice.getManufacturerName());
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            deviceMap.putString("product_name", this.mDevice.getProductName());
+        }
         deviceMap.putString("device_name", this.mDevice.getDeviceName());
         deviceMap.putInt("device_id", this.mDevice.getDeviceId());
         deviceMap.putInt("vendor_id", this.mDevice.getVendorId());
