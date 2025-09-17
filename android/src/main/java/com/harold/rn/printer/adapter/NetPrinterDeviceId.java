@@ -1,8 +1,4 @@
-package com.pinmi.react.printer.adapter;
-
-/**
- * Created by xiesubin on 2017/9/21.
- */
+package com.harold.rn.printer.adapter;
 
 public class NetPrinterDeviceId extends PrinterDeviceId {
     private String host;

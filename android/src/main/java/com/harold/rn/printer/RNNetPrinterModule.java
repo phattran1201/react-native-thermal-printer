@@ -1,4 +1,4 @@
-package com.pinmi.react.printer;
+package com.harold.rn.printer;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,13 +9,9 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
-import com.pinmi.react.printer.adapter.NetPrinterAdapter;
-import com.pinmi.react.printer.adapter.NetPrinterDeviceId;
-import com.pinmi.react.printer.adapter.PrinterAdapter;
-
-/**
- * Created by xiesubin on 2017/9/22.
- */
+import com.harold.rn.printer.adapter.NetPrinterAdapter;
+import com.harold.rn.printer.adapter.NetPrinterDeviceId;
+import com.harold.rn.printer.adapter.PrinterAdapter;
 
 public class RNNetPrinterModule extends ReactContextBaseJavaModule implements RNPrinterModule {
 

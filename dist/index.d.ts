@@ -1,5 +1,10 @@
 import { NativeEventEmitter } from "react-native";
 import { COMMANDS } from "./utils/printer-commands";
+export declare enum EDevicesPrinter {
+    usb = "usb",
+    net = "net",
+    blu = "blu"
+}
 export interface PrinterOptions {
     beep?: boolean;
     cut?: boolean;
@@ -37,6 +42,7 @@ export interface IBLEPrinter {
 }
 export interface INetPrinter {
     device: string;
+    device_name?: string;
     host: string;
     port: number;
 }
@@ -139,6 +145,17 @@ declare const NetPrinter: {
     printColumnsText: (texts: string[], columnWidth: number[], columnAlignment: ColumnAlignment[], columnStyle?: string[], opts?: PrinterOptions) => void;
 };
 declare const NetPrinterEventEmitter: NativeEventEmitter;
+export type IDevicesSelectPrinter = ({
+    printerType: keyof typeof EDevicesPrinter;
+} & Partial<IUSBPrinter & IBLEPrinter & INetPrinter>) | ({
+    printerType: EDevicesPrinter.usb;
+} & IUSBPrinter) | ({
+    printerType: EDevicesPrinter.blu;
+} & IBLEPrinter) | ({
+    printerType: EDevicesPrinter.net;
+} & INetPrinter);
+export type IDevicesPrinter = Partial<typeof USBPrinter & typeof BLEPrinter & typeof NetPrinter> | typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter;
+export declare const DEVICE_PRINTER: Record<string, typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter>;
 export { BLEPrinter, COMMANDS, NetPrinter, NetPrinterEventEmitter, USBPrinter };
 export declare enum RN_THERMAL_PRINTER_EVENTS {
     EVENT_NET_PRINTER_SCANNED_SUCCESS = "scannerResolved",

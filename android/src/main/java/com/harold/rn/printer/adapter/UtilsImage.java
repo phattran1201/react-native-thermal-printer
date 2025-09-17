@@ -1,4 +1,4 @@
-package com.pinmi.react.printer.adapter;
+package com.harold.rn.printer.adapter;
 
 import android.graphics.Bitmap;
 import android.graphics.Color;

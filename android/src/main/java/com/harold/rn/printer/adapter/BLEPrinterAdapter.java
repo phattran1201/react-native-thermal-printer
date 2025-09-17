@@ -1,6 +1,6 @@
-package com.pinmi.react.printer.adapter;
-import static com.pinmi.react.printer.adapter.UtilsImage.getPixelsSlow;
-import static com.pinmi.react.printer.adapter.UtilsImage.recollectSlice;
+package com.harold.rn.printer.adapter;
+import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
+import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import android.graphics.BitmapFactory;
-/**
- * Created by xiesubin on 2017/9/21.
- */
 
 public class BLEPrinterAdapter implements PrinterAdapter{
 

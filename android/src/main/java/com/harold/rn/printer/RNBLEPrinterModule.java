@@ -1,4 +1,4 @@
-package com.pinmi.react.printer;
+package com.harold.rn.printer;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -11,17 +11,13 @@ import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
-import com.pinmi.react.printer.adapter.BLEPrinterAdapter;
-import com.pinmi.react.printer.adapter.BLEPrinterDeviceId;
-import com.pinmi.react.printer.adapter.PrinterAdapter;
-import com.pinmi.react.printer.adapter.PrinterDevice;
-//import com.pinmi.react.printer.adapter.PrinterOption;
+import com.harold.rn.printer.adapter.BLEPrinterAdapter;
+import com.harold.rn.printer.adapter.BLEPrinterDeviceId;
+import com.harold.rn.printer.adapter.PrinterAdapter;
+import com.harold.rn.printer.adapter.PrinterDevice;
+//import com.harold.rn.printer.adapter.PrinterOption;
 
 import java.util.List;
-
-/**
- * Created by xiesubin on 2017/9/22.
- */
 
 public class RNBLEPrinterModule extends ReactContextBaseJavaModule implements RNPrinterModule {
 

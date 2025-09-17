@@ -1,4 +1,4 @@
-package com.pinmi.react.printer;
+package com.harold.rn.printer;
 
 import org.junit.Test;
 

@@ -1,7 +1,7 @@
-package com.pinmi.react.printer.adapter;
+package com.harold.rn.printer.adapter;
 
-import static com.pinmi.react.printer.adapter.UtilsImage.getPixelsSlow;
-import static com.pinmi.react.printer.adapter.UtilsImage.recollectSlice;
+import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
+import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
 
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
@@ -34,10 +34,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by xiesubin on 2017/9/20.
- */
-
 public class USBPrinterAdapter implements PrinterAdapter {
     @SuppressLint("StaticFieldLeak")
     private static USBPrinterAdapter mInstance;
@@ -51,7 +47,7 @@ public class USBPrinterAdapter implements PrinterAdapter {
     private UsbDeviceConnection mUsbDeviceConnection;
     private UsbInterface mUsbInterface;
     private UsbEndpoint mEndPoint;
-    private static final String ACTION_USB_PERMISSION = "com.pinmi.react.USBPrinter.USB_PERMISSION";
+    private static final String ACTION_USB_PERMISSION = "com.harold.rn.USBPrinter.USB_PERMISSION";
     private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
 
     private final static char ESC_CHAR = 0x1B;

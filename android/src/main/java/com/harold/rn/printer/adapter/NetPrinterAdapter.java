@@ -1,6 +1,6 @@
-package com.pinmi.react.printer.adapter;
-import static com.pinmi.react.printer.adapter.UtilsImage.getPixelsSlow;
-import static com.pinmi.react.printer.adapter.UtilsImage.recollectSlice;
+package com.harold.rn.printer.adapter;
+import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
+import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
 
 import android.content.Context;
 import android.graphics.Bitmap;
@@ -30,9 +30,6 @@ import java.util.List;
 import android.graphics.BitmapFactory;
 import androidx.annotation.RequiresApi;
 
-/**
- * Created by xiesubin on 2017/9/22.
- */
 
 public class NetPrinterAdapter implements PrinterAdapter {
     private static NetPrinterAdapter mInstance;

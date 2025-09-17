@@ -9,6 +9,12 @@ const RNUSBPrinter = NativeModules.RNUSBPrinter;
 const RNBLEPrinter = NativeModules.RNBLEPrinter;
 const RNNetPrinter = NativeModules.RNNetPrinter;
 
+export enum EDevicesPrinter {
+  usb = "usb",
+  net = "net",
+  blu = "blu",
+}
+
 export interface PrinterOptions {
   beep?: boolean;
   cut?: boolean;
@@ -52,6 +58,7 @@ export interface IBLEPrinter {
 
 export interface INetPrinter {
   device: string;
+  device_name?: string;
   host: string;
   port: number;
 }
@@ -615,6 +622,29 @@ const NetPrinterEventEmitter =
   Platform.OS === "ios"
     ? new NativeEventEmitter(RNNetPrinter)
     : new NativeEventEmitter();
+
+export type IDevicesSelectPrinter =
+  | ({ printerType: keyof typeof EDevicesPrinter } & Partial<
+      IUSBPrinter & IBLEPrinter & INetPrinter
+    >)
+  | ({ printerType: EDevicesPrinter.usb } & IUSBPrinter)
+  | ({ printerType: EDevicesPrinter.blu } & IBLEPrinter)
+  | ({ printerType: EDevicesPrinter.net } & INetPrinter);
+
+export type IDevicesPrinter =
+  | Partial<typeof USBPrinter & typeof BLEPrinter & typeof NetPrinter>
+  | typeof USBPrinter
+  | typeof BLEPrinter
+  | typeof NetPrinter;
+
+export const DEVICE_PRINTER: Record<
+  string,
+  typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter
+> = {
+  usb: USBPrinter,
+  ble: BLEPrinter,
+  net: NetPrinter,
+};
 
 export { BLEPrinter, COMMANDS, NetPrinter, NetPrinterEventEmitter, USBPrinter };
 

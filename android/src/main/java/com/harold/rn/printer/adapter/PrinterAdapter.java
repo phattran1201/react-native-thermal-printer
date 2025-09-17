@@ -1,4 +1,4 @@
-package com.pinmi.react.printer.adapter;
+package com.harold.rn.printer.adapter;
 
 import android.app.Activity;
 import android.content.Context;
@@ -9,10 +9,6 @@ import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 
 import java.util.List;
-
-/**
- * Created by xiesubin on 2017/9/21.
- */
 
 public interface PrinterAdapter {
 

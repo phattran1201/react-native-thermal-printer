@@ -1,10 +1,6 @@
-package com.pinmi.react.printer;
+package com.harold.rn.printer;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactMethod;
-
-/**
- * Created by xiesubin on 2017/9/21.
- */
 
 public interface RNPrinterModule {
 

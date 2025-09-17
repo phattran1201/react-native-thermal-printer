@@ -53,6 +53,12 @@ import { COMMANDS } from "./utils/printer-commands";
 var RNUSBPrinter = NativeModules.RNUSBPrinter;
 var RNBLEPrinter = NativeModules.RNBLEPrinter;
 var RNNetPrinter = NativeModules.RNNetPrinter;
+export var EDevicesPrinter;
+(function (EDevicesPrinter) {
+    EDevicesPrinter["usb"] = "usb";
+    EDevicesPrinter["net"] = "net";
+    EDevicesPrinter["blu"] = "blu";
+})(EDevicesPrinter || (EDevicesPrinter = {}));
 export var PrinterWidth;
 (function (PrinterWidth) {
     PrinterWidth[PrinterWidth["58mm"] = 58] = "58mm";
@@ -535,6 +541,11 @@ var NetPrinter = {
 var NetPrinterEventEmitter = Platform.OS === "ios"
     ? new NativeEventEmitter(RNNetPrinter)
     : new NativeEventEmitter();
+export var DEVICE_PRINTER = {
+    usb: USBPrinter,
+    ble: BLEPrinter,
+    net: NetPrinter,
+};
 export { BLEPrinter, COMMANDS, NetPrinter, NetPrinterEventEmitter, USBPrinter };
 export var RN_THERMAL_PRINTER_EVENTS;
 (function (RN_THERMAL_PRINTER_EVENTS) {

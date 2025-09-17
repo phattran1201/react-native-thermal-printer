@@ -1,4 +1,4 @@
-package com.pinmi.react.printer;
+package com.harold.rn.printer;
 
 import android.content.Context;
 import androidx.test.InstrumentationRegistry;
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getTargetContext();
 
-        assertEquals("com.pinmi.react.printer.test", appContext.getPackageName());
+        assertEquals("com.harold.rn.printer.test", appContext.getPackageName());
     }
 }

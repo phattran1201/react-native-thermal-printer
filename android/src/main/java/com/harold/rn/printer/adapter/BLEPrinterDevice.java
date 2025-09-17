@@ -1,4 +1,4 @@
-package com.pinmi.react.printer.adapter;
+package com.harold.rn.printer.adapter;
 
 import android.bluetooth.BluetoothDevice;
 
@@ -6,10 +6,6 @@ import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
 import com.google.gson.Gson;
-
-/**
- * Created by xiesubin on 2017/9/21.
- */
 
 public class BLEPrinterDevice implements PrinterDevice {
     private BluetoothDevice mBluetoothDevice;

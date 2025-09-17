@@ -1,13 +1,9 @@
-package com.pinmi.react.printer.adapter;
+package com.harold.rn.printer.adapter;
 
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
 import com.google.gson.Gson;
-
-/**
- * Created by xiesubin on 2017/9/21.
- */
 
 public class NetPrinterDevice implements PrinterDevice {
     private NetPrinterDeviceId mNetPrinterDeviceId;
@@ -24,7 +20,7 @@ public class NetPrinterDevice implements PrinterDevice {
     @Override
     public WritableMap toRNWritableMap() {
         WritableMap deviceMap = Arguments.createMap();
-        deviceMap.putString("device", new Gson().toJson(this.mBluetoothDevice));
+        deviceMap.putString("device", new Gson().toJson(this.mNetPrinterDeviceId));
         deviceMap.putString("device_name", this.mNetPrinterDeviceId.getHost() + ":" + this.mNetPrinterDeviceId.getPort());
         deviceMap.putString("host", this.mNetPrinterDeviceId.getHost());
         deviceMap.putInt("port", this.mNetPrinterDeviceId.getPort());
