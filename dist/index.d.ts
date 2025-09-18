@@ -3,7 +3,7 @@ import { COMMANDS } from "./utils/printer-commands";
 export declare enum EDevicesPrinter {
     usb = "usb",
     net = "net",
-    blu = "blu"
+    ble = "ble"
 }
 export interface PrinterOptions {
     beep?: boolean;
@@ -150,7 +150,7 @@ export type IDevicesSelectPrinter = ({
 } & Partial<IUSBPrinter & IBLEPrinter & INetPrinter>) | ({
     printerType: EDevicesPrinter.usb;
 } & IUSBPrinter) | ({
-    printerType: EDevicesPrinter.blu;
+    printerType: EDevicesPrinter.ble;
 } & IBLEPrinter) | ({
     printerType: EDevicesPrinter.net;
 } & INetPrinter);

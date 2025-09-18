@@ -57,7 +57,7 @@ export var EDevicesPrinter;
 (function (EDevicesPrinter) {
     EDevicesPrinter["usb"] = "usb";
     EDevicesPrinter["net"] = "net";
-    EDevicesPrinter["blu"] = "blu";
+    EDevicesPrinter["ble"] = "ble";
 })(EDevicesPrinter || (EDevicesPrinter = {}));
 export var PrinterWidth;
 (function (PrinterWidth) {

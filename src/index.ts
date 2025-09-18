@@ -12,7 +12,7 @@ const RNNetPrinter = NativeModules.RNNetPrinter;
 export enum EDevicesPrinter {
   usb = "usb",
   net = "net",
-  blu = "blu",
+  ble = "ble",
 }
 
 export interface PrinterOptions {
@@ -628,7 +628,7 @@ export type IDevicesSelectPrinter =
       IUSBPrinter & IBLEPrinter & INetPrinter
     >)
   | ({ printerType: EDevicesPrinter.usb } & IUSBPrinter)
-  | ({ printerType: EDevicesPrinter.blu } & IBLEPrinter)
+  | ({ printerType: EDevicesPrinter.ble } & IBLEPrinter)
   | ({ printerType: EDevicesPrinter.net } & INetPrinter);
 
 export type IDevicesPrinter =
