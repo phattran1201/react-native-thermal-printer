@@ -1,4 +1,4 @@
-import { ColumnAlignment } from "..";
+import { ColumnAlignment } from "../constant";
 
 /**
  * Using to add space for each row
@@ -9,7 +9,7 @@ import { ColumnAlignment } from "..";
 const processAlignText = (
   text: string,
   restLength: number,
-  align: ColumnAlignment
+  align: ColumnAlignment,
 ): string => {
   if (align === 0) {
     return text + " ".repeat(restLength);
@@ -32,7 +32,7 @@ const processAlignText = (
  */
 const processNewLine = (
   text: string,
-  maxLength: number
+  maxLength: number,
 ): {
   text: string;
   text_tail: string;
@@ -69,7 +69,7 @@ export const processColumnText = (
   texts: string[],
   columnWidth: number[],
   columnAlignment: ColumnAlignment[],
-  columnStyle: string[] = []
+  columnStyle: string[] = [],
 ): string => {
   let rest_texts: [string, string, string] = ["", "", ""];
   let result = "";
@@ -82,7 +82,7 @@ export const processColumnText = (
         processAlignText(
           processedText.text,
           columnWidthAtRow - processedText.text.length,
-          columnAlignment[idx]
+          columnAlignment[idx],
         ) +
         (idx !== 2 ? " " : "");
       rest_texts[idx] = processedText.text_tail;
@@ -92,7 +92,7 @@ export const processColumnText = (
         processAlignText(
           text.trim(),
           columnWidthAtRow - text.length,
-          columnAlignment[idx]
+          columnAlignment[idx],
         ) +
         (idx !== 2 ? " " : "");
     }

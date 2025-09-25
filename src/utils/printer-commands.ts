@@ -113,19 +113,20 @@ export interface TextFormat {
  */
 export interface Commands {
   // Ký tự điều khiển cơ bản
-  /** Xuống dòng (LF) */ LF: string;
-  /** Escape (ESC) */ ESC: string;
-  /** File Separator (FS) */ FS: string;
-  /** Group Separator (GS) */ GS: string;
-  /** Unit Separator (US) */ US: string;
-  /** Form Feed (FF) */ FF: string;
-  /** Data Link Escape (DLE) */ DLE: string;
-  /** Device Control 1 (DC1) */ DC1: string;
-  /** Device Control 4 (DC4) */ DC4: string;
-  /** End Of Transmission (EOT) */ EOT: string;
-  /** Null (NUL) */ NUL: string;
-  /** Kết thúc dòng (\n) */ EOL: string;
-
+  BASIC: {
+    /** Xuống dòng (LF) */ LF: string;
+    /** Escape (ESC) */ ESC: string;
+    /** File Separator (FS) */ FS: string;
+    /** Group Separator (GS) */ GS: string;
+    /** Unit Separator (US) */ US: string;
+    /** Form Feed (FF) */ FF: string;
+    /** Data Link Escape (DLE) */ DLE: string;
+    /** Device Control 1 (DC1) */ DC1: string;
+    /** Device Control 4 (DC4) */ DC4: string;
+    /** End Of Transmission (EOT) */ EOT: string;
+    /** Null (NUL) */ NUL: string;
+    /** Kết thúc dòng (\n) */ EOL: string;
+  };
   /** Đường kẻ ngang mẫu */ HORIZONTAL_LINE: HorizontalLine;
   /** Trình tự điều khiển nạp giấy/di chuyển */ FEED_CONTROL_SEQUENCES: FeedControlSequences;
   /** Khoảng cách dòng */ LINE_SPACING: LineSpacing;
@@ -142,31 +143,32 @@ export interface Commands {
  */
 export const COMMANDS: Commands = {
   // ==================== BASIC CONTROL CHARACTERS ====================
-  /** Line Feed (LF) – xuống dòng in phần đệm và xuống dòng mới */
-  LF: "\x0a",
-  /** Escape – ký tự bắt đầu cho nhiều lệnh ESC/POS */
-  ESC: "\x1b",
-  /** File Separator (FS) – ký tự điều khiển */
-  FS: "\x1c",
-  /** Group Separator (GS) – mở đầu nhiều lệnh GS (0x1D) */
-  GS: "\x1d",
-  /** Unit Separator (US) – ký tự điều khiển */
-  US: "\x1f",
-  /** Form Feed (FF) – chuyển sang trang/biểu mẫu tiếp theo (nếu hỗ trợ) */
-  FF: "\x0c",
-  /** Data Link Escape (DLE) – ký tự điều khiển liên kết dữ liệu */
-  DLE: "\x10",
-  /** Device Control 1 (DC1) – ký tự điều khiển thiết bị 1 */
-  DC1: "\x11",
-  /** Device Control 4 (DC4) – ký tự điều khiển thiết bị 4 */
-  DC4: "\x14",
-  /** End Of Transmission (EOT) – kết thúc truyền */
-  EOT: "\x04",
-  /** Null (NUL) – ký tự rỗng */
-  NUL: "\x00",
-  /** End Of Line (EOL) – xuống dòng kiểu \n */
-  EOL: "\n",
-
+  BASIC: {
+    /** Line Feed (LF) – xuống dòng in phần đệm và xuống dòng mới */
+    LF: "\x0a",
+    /** Escape – ký tự bắt đầu cho nhiều lệnh ESC/POS */
+    ESC: "\x1b",
+    /** File Separator (FS) – ký tự điều khiển */
+    FS: "\x1c",
+    /** Group Separator (GS) – mở đầu nhiều lệnh GS (0x1D) */
+    GS: "\x1d",
+    /** Unit Separator (US) – ký tự điều khiển */
+    US: "\x1f",
+    /** Form Feed (FF) – chuyển sang trang/biểu mẫu tiếp theo (nếu hỗ trợ) */
+    FF: "\x0c",
+    /** Data Link Escape (DLE) – ký tự điều khiển liên kết dữ liệu */
+    DLE: "\x10",
+    /** Device Control 1 (DC1) – ký tự điều khiển thiết bị 1 */
+    DC1: "\x11",
+    /** Device Control 4 (DC4) – ký tự điều khiển thiết bị 4 */
+    DC4: "\x14",
+    /** End Of Transmission (EOT) – kết thúc truyền */
+    EOT: "\x04",
+    /** Null (NUL) – ký tự rỗng */
+    NUL: "\x00",
+    /** End Of Line (EOL) – xuống dòng kiểu \n */
+    EOL: "\n",
+  },
   // ==================== HORIZONTAL LINES ====================
   HORIZONTAL_LINE: {
     /** Đường kẻ khổ 58mm bằng dấu = */
@@ -330,3 +332,33 @@ export const COMMANDS: Commands = {
     TXT_ALIGN_RT: "\x1b\x61\x02",
   },
 };
+
+export const BASIC = COMMANDS.BASIC;
+export const HORIZONTAL_LINE = COMMANDS.HORIZONTAL_LINE;
+export const FEED_CONTROL_SEQUENCES = COMMANDS.FEED_CONTROL_SEQUENCES;
+export const LINE_SPACING = COMMANDS.LINE_SPACING;
+export const HARDWARE = COMMANDS.HARDWARE;
+export const CASH_DRAWER = COMMANDS.CASH_DRAWER;
+export const MARGINS = COMMANDS.MARGINS;
+export const PAPER = COMMANDS.PAPER;
+export const TEXT_FORMAT = COMMANDS.TEXT_FORMAT;
+
+// ==================== EXPORT ALL ====================
+export const BREAK_LINE = BASIC.EOL;
+export const UNDERLINE_OFF = TEXT_FORMAT.TXT_UNDERL_OFF;
+export const UNDERLINE_ON = TEXT_FORMAT.TXT_UNDERL_ON;
+export const UNDERLINE_2DOT_ON = TEXT_FORMAT.TXT_UNDERL2_ON;
+export const BOLD_OFF = TEXT_FORMAT.TXT_BOLD_OFF;
+export const BOLD_ON = TEXT_FORMAT.TXT_BOLD_ON;
+export const ITALIC_OFF = TEXT_FORMAT.TXT_ITALIC_OFF;
+export const ITALIC_ON = TEXT_FORMAT.TXT_ITALIC_ON;
+
+// Font types
+export const FONT_A = TEXT_FORMAT.TXT_FONT_A;
+export const FONT_B = TEXT_FORMAT.TXT_FONT_B;
+export const FONT_C = TEXT_FORMAT.TXT_FONT_C;
+
+// Text alignment
+export const ALIGN_LEFT = TEXT_FORMAT.TXT_ALIGN_LT;
+export const ALIGN_CENTER = TEXT_FORMAT.TXT_ALIGN_CT;
+export const ALIGN_RIGHT = TEXT_FORMAT.TXT_ALIGN_RT;

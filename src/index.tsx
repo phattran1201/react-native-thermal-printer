@@ -1,73 +1,22 @@
 import { NativeEventEmitter, NativeModules, Platform } from "react-native";
-
+import { ColumnAlignment } from "./constant";
+import {
+  IBLEPrinter,
+  INetPrinter,
+  IUSBPrinter,
+  PrinterImageOptions,
+  PrinterOptions,
+} from "./type";
 import * as EPToolkit from "./utils/EPToolkit";
 import { connectToHost } from "./utils/net-connect";
 import { processColumnText } from "./utils/print-column";
-import { COMMANDS } from "./utils/printer-commands";
+export * from "./constant";
+export * from "./type";
+export * from "./utils/printer-commands";
 
 const RNUSBPrinter = NativeModules.RNUSBPrinter;
 const RNBLEPrinter = NativeModules.RNBLEPrinter;
 const RNNetPrinter = NativeModules.RNNetPrinter;
-
-export enum EDevicesPrinter {
-  usb = "usb",
-  net = "net",
-  ble = "ble",
-}
-
-export interface PrinterOptions {
-  beep?: boolean;
-  cut?: boolean;
-  tailingLine?: boolean;
-  encoding?: string;
-  onError?: (error: Error) => void;
-}
-
-export enum PrinterWidth {
-  "58mm" = 58,
-  "80mm" = 80,
-}
-
-export interface PrinterImageOptions {
-  beep?: boolean;
-  cut?: boolean;
-  tailingLine?: boolean;
-  encoding?: string;
-  imageWidth?: number;
-  imageHeight?: number;
-  printerWidthType?: PrinterWidth;
-  // only ios
-  paddingX?: number;
-  onError?: (error: Error) => void;
-}
-
-export interface IUSBPrinter {
-  device: string;
-  manufacturer_name: string;
-  product_name: string;
-  device_name: string;
-  vendor_id: string;
-  product_id: string;
-}
-
-export interface IBLEPrinter {
-  device: string;
-  device_name: string;
-  inner_mac_address: string;
-}
-
-export interface INetPrinter {
-  device: string;
-  device_name?: string;
-  host: string;
-  port: number;
-}
-
-export enum ColumnAlignment {
-  LEFT,
-  CENTER,
-  RIGHT,
-}
 
 const textTo64Buffer = (text: string, opts: PrinterOptions) => {
   const defaultOptions = {
@@ -137,7 +86,13 @@ const USBPrinter = {
   getDeviceList: (): Promise<IUSBPrinter[]> =>
     new Promise((resolve, reject) =>
       RNUSBPrinter.getDeviceList(
-        (printers: IUSBPrinter[]) => resolve(printers),
+        (printers: IUSBPrinter[]) =>
+          resolve(
+            printers.map((printer) => ({
+              ...printer,
+              device: JSON.parse(printer.device || "{}"),
+            })),
+          ),
         (error: Error) => reject(error),
       ),
     ),
@@ -147,7 +102,8 @@ const USBPrinter = {
       RNUSBPrinter.connectPrinter(
         vendorId,
         productId,
-        (printer: IUSBPrinter) => resolve(printer),
+        (printer: IUSBPrinter) =>
+          resolve({ ...printer, device: JSON.parse(printer.device || "{}") }),
         (error: Error) => reject(error),
       ),
     ),
@@ -262,7 +218,13 @@ const BLEPrinter = {
   getDeviceList: (): Promise<IBLEPrinter[]> =>
     new Promise((resolve, reject) =>
       RNBLEPrinter.getDeviceList(
-        (printers: IBLEPrinter[]) => resolve(printers),
+        (printers: IBLEPrinter[]) =>
+          resolve(
+            printers.map((printer) => ({
+              ...printer,
+              device: JSON.parse(printer?.device || "{}"),
+            })),
+          ),
         (error: Error) => reject(error),
       ),
     ),
@@ -271,7 +233,8 @@ const BLEPrinter = {
     new Promise((resolve, reject) =>
       RNBLEPrinter.connectPrinter(
         inner_mac_address,
-        (printer: IBLEPrinter) => resolve(printer),
+        (printer: IBLEPrinter) =>
+          resolve({ ...printer, device: JSON.parse(printer?.device || "{}") }),
         (error: Error) => reject(error),
       ),
     ),
@@ -449,7 +412,13 @@ const NetPrinter = {
   getDeviceList: (): Promise<INetPrinter[]> =>
     new Promise((resolve, reject) =>
       RNNetPrinter.getDeviceList(
-        (printers: INetPrinter[]) => resolve(printers),
+        (printers: INetPrinter[]) =>
+          resolve(
+            printers.map((printer) => ({
+              ...printer,
+              device: JSON.parse(printer?.device || "{}"),
+            })),
+          ),
         (error: Error) => reject(error),
       ),
     ),
@@ -465,7 +434,11 @@ const NetPrinter = {
         RNNetPrinter.connectPrinter(
           host,
           port,
-          (printer: INetPrinter) => resolve(printer),
+          (printer: INetPrinter) =>
+            resolve({
+              ...printer,
+              device: JSON.parse(printer?.device || "{}"),
+            }),
           (error: Error) => reject(error),
         );
       } catch (error: any) {
@@ -623,20 +596,7 @@ const NetPrinterEventEmitter =
     ? new NativeEventEmitter(RNNetPrinter)
     : new NativeEventEmitter();
 
-export type IDevicesSelectPrinter =
-  | ({ printerType: keyof typeof EDevicesPrinter } & Partial<
-      IUSBPrinter & IBLEPrinter & INetPrinter
-    >)
-  | ({ printerType: EDevicesPrinter.usb } & IUSBPrinter)
-  | ({ printerType: EDevicesPrinter.ble } & IBLEPrinter)
-  | ({ printerType: EDevicesPrinter.net } & INetPrinter);
-
-export type IDevicesPrinter =
-  | Partial<typeof USBPrinter & typeof BLEPrinter & typeof NetPrinter>
-  | typeof USBPrinter
-  | typeof BLEPrinter
-  | typeof NetPrinter;
-
+export { BLEPrinter, NetPrinter, NetPrinterEventEmitter, USBPrinter };
 export const DEVICE_PRINTER: Record<
   string,
   typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter
@@ -645,11 +605,3 @@ export const DEVICE_PRINTER: Record<
   ble: BLEPrinter,
   net: NetPrinter,
 };
-
-export { BLEPrinter, COMMANDS, NetPrinter, NetPrinterEventEmitter, USBPrinter };
-
-export enum RN_THERMAL_PRINTER_EVENTS {
-  EVENT_NET_PRINTER_SCANNED_SUCCESS = "scannerResolved",
-  EVENT_NET_PRINTER_SCANNING = "scannerRunning",
-  EVENT_NET_PRINTER_SCANNED_ERROR = "registerError",
-}
