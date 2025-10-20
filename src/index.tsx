@@ -116,13 +116,13 @@ const USBPrinter = {
 
   printText: (text: string, opts: PrinterOptions = {}): void =>
     RNUSBPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => {
-      console.warn(error);
+      console.warn("Printer -> ", error);
       opts?.onError?.(error);
     }),
 
   printBill: (text: string, opts: PrinterOptions = {}): void =>
     RNUSBPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => {
-      console.warn(error);
+      console.warn("Printer -> ", error);
       opts?.onError?.(error);
     }),
   /**
@@ -133,7 +133,7 @@ const USBPrinter = {
   printImage: function (imgUrl: string, opts: PrinterImageOptions = {}) {
     if (Platform.OS === "ios") {
       RNUSBPrinter.printImageData(imgUrl, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -142,7 +142,7 @@ const USBPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -156,7 +156,7 @@ const USBPrinter = {
   printImageBase64: function (Base64: string, opts: PrinterImageOptions = {}) {
     if (Platform.OS === "ios") {
       RNUSBPrinter.printImageBase64(Base64, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -165,7 +165,7 @@ const USBPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -178,13 +178,15 @@ const USBPrinter = {
   printRaw: (text: string): void => {
     if (Platform.OS === "ios") {
     } else {
-      RNUSBPrinter.printRawData(text, (error: Error) => console.warn(error));
+      RNUSBPrinter.printRawData(text, (error: Error) =>
+        console.warn("Printer -> ", error),
+      );
     }
   },
   /**
    * `columnWidth`
-   * 80mm => 46 character
-   * 58mm => 30 character
+   * 80mm => 48 character
+   * 58mm => 32 character
    */
   printColumnsText: (
     texts: string[],
@@ -200,7 +202,7 @@ const USBPrinter = {
       columnStyle,
     );
     RNUSBPrinter.printRawData(textTo64Buffer(result, opts), (error: Error) => {
-      console.warn(error);
+      console.warn("Printer -> ", error);
       opts?.onError?.(error);
     });
   },
@@ -252,13 +254,13 @@ const BLEPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
     } else {
       RNBLEPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     }
@@ -275,13 +277,13 @@ const BLEPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
     } else {
       RNBLEPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     }
@@ -297,7 +299,7 @@ const BLEPrinter = {
        * just development
        */
       RNBLEPrinter.printImageData(imgUrl, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -306,7 +308,7 @@ const BLEPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -323,7 +325,7 @@ const BLEPrinter = {
        * just development
        */
       RNBLEPrinter.printImageBase64(Base64, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -335,7 +337,7 @@ const BLEPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -353,17 +355,19 @@ const BLEPrinter = {
         processedText.text,
         processedText.opts,
         function (error) {
-          return console.warn(error);
+          return console.warn("Printer -> ", error);
         },
       );
     } else {
-      RNBLEPrinter.printRawData(text, (error: Error) => console.warn(error));
+      RNBLEPrinter.printRawData(text, (error: Error) =>
+        console.warn("Printer -> ", error),
+      );
     }
   },
   /**
    * `columnWidth`
-   * 80mm => 46 character
-   * 58mm => 30 character
+   * 80mm => 48 character
+   * 58mm => 32 character
    */
   printColumnsText: (
     texts: string[],
@@ -384,7 +388,7 @@ const BLEPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -392,7 +396,7 @@ const BLEPrinter = {
       RNBLEPrinter.printRawData(
         textTo64Buffer(result, opts),
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -459,13 +463,13 @@ const NetPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
     } else {
       RNNetPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     }
@@ -482,13 +486,13 @@ const NetPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
     } else {
       RNNetPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     }
@@ -501,7 +505,7 @@ const NetPrinter = {
   printImage: function (imgUrl: string, opts: PrinterImageOptions = {}) {
     if (Platform.OS === "ios") {
       RNNetPrinter.printImageData(imgUrl, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -510,7 +514,7 @@ const NetPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -524,7 +528,7 @@ const NetPrinter = {
   printImageBase64: function (Base64: string, opts: PrinterImageOptions = {}) {
     if (Platform.OS === "ios") {
       RNNetPrinter.printImageBase64(Base64, opts, (error: Error) => {
-        console.warn(error);
+        console.warn("Printer -> ", error);
         opts?.onError?.(error);
       });
     } else {
@@ -533,7 +537,7 @@ const NetPrinter = {
         opts?.imageWidth ?? 0,
         opts?.imageHeight ?? 0,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -547,14 +551,16 @@ const NetPrinter = {
   printRaw: (text: string): void => {
     if (Platform.OS === "ios") {
     } else {
-      RNNetPrinter.printRawData(text, (error: Error) => console.warn(error));
+      RNNetPrinter.printRawData(text, (error: Error) =>
+        console.warn("Printer -> ", error),
+      );
     }
   },
 
   /**
    * `columnWidth`
-   * 80mm => 46 character
-   * 58mm => 30 character
+   * 80mm => 48 character
+   * 58mm => 32 character
    */
   printColumnsText: (
     texts: string[],
@@ -575,7 +581,7 @@ const NetPrinter = {
         processedText.text,
         processedText.opts,
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );
@@ -583,7 +589,7 @@ const NetPrinter = {
       RNNetPrinter.printRawData(
         textTo64Buffer(result, opts),
         (error: Error) => {
-          console.warn(error);
+          console.warn("Printer -> ", error);
           opts?.onError?.(error);
         },
       );

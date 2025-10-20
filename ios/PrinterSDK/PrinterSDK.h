@@ -1,11 +1,3 @@
-//
-//  PrinterSDK.h
-//  PrinterLibrary
-//
-//  Created by aduo on 5/30/16.
-//
-//
-
 #ifndef __PRINTERSDK_H__
 #define __PRINTERSDK_H__
 

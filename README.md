@@ -104,7 +104,7 @@ const handlePrint = async () => {
       ['3. Women Crew Neck Button Down Ruffle Collar Loose Blouse', 'x1', '30000000000000$'],
     ];
     let columnAlignment = [ColumnAlignment.LEFT, ColumnAlignment.CENTER, ColumnAlignment.RIGHT];
-    let columnWidth = [46 - (7 + 12), 7, 12];
+    let columnWidth = [48 - (7 + 12), 7, 12];
     const header = ['Product list', 'Qty', 'Price'];
     Printer.printImage('https://i.ibb.co/21dsjpLx/image-23-2.png', { imageWidth: 400 });
     Printer.printColumnsText(header, columnWidth, columnAlignment, [`${BOLD_ON}`, '', '']);

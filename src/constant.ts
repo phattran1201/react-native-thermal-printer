@@ -16,8 +16,8 @@ export interface IPrinterWidth {
   charPerLine: number;
 }
 export const PrinterWidth: Record<IPaperWidth, IPrinterWidth> = {
-  [IPaperWidth["58mm"]]: { width: 384, charPerLine: 30 },
-  [IPaperWidth["80mm"]]: { width: 576, charPerLine: 46 },
+  [IPaperWidth["58mm"]]: { width: 384, charPerLine: 32 },
+  [IPaperWidth["80mm"]]: { width: 576, charPerLine: 48 },
 };
 
 export enum ColumnAlignment {

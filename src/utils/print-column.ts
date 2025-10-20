@@ -83,8 +83,7 @@ export const processColumnText = (
           processedText.text,
           columnWidthAtRow - processedText.text.length,
           columnAlignment[idx],
-        ) +
-        (idx !== 2 && idx !== texts.length - 1 ? " " : "");
+        );
       rest_texts[idx] = processedText.text_tail;
     } else {
       result +=
@@ -93,8 +92,7 @@ export const processColumnText = (
           text.trim(),
           columnWidthAtRow - text.length,
           columnAlignment[idx],
-        ) +
-        (idx !== 2 && idx !== texts.length - 1 ? " " : "");
+        );
     }
   });
   const index_nonEmpty = rest_texts.findIndex((rest_text) => rest_text != "");
