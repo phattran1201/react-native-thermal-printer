@@ -18,5 +18,5 @@ Pod::Spec.new do |s|
   s.ios.vendored_libraries = "ios/PrinterSDK/libPrinterSDK.a"
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/PrinterSDK"/**' }
 
-  s.dependency 'React'
+  s.dependency 'React-Core'
 end
