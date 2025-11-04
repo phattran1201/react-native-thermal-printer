@@ -1,4 +1,5 @@
 package com.harold.rn.printer.adapter;
+
 import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
 import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
 
@@ -30,7 +31,6 @@ import java.util.List;
 import android.graphics.BitmapFactory;
 import androidx.annotation.RequiresApi;
 
-
 public class NetPrinterAdapter implements PrinterAdapter {
     private static NetPrinterAdapter mInstance;
     private ReactApplicationContext mContext;
@@ -39,16 +39,16 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     // {TODO- support other ports later}
 
-    private final int[] PRINTER_ON_PORTS = {9100};
+    private final int[] PRINTER_ON_PORTS = { 9100 };
     private static final String EVENT_SCANNER_RESOLVED = "scannerResolved";
     private static final String EVENT_SCANNER_RUNNING = "scannerRunning";
 
     private final static char ESC_CHAR = 0x1B;
-    private static final byte[] SELECT_BIT_IMAGE_MODE = {0x1B, 0x2A, 33};
-    private final static byte[] SET_LINE_SPACE_24 = new byte[]{ESC_CHAR, 0x33, 24};
-    private final static byte[] SET_LINE_SPACE_32 = new byte[]{ESC_CHAR, 0x33, 32};
-    private final static byte[] LINE_FEED = new byte[]{0x0A};
-    private static final byte[] CENTER_ALIGN = {0x1B, 0X61, 0X31};
+    private static final byte[] SELECT_BIT_IMAGE_MODE = { 0x1B, 0x2A, 33 };
+    private final static byte[] SET_LINE_SPACE_24 = new byte[] { ESC_CHAR, 0x33, 24 };
+    private final static byte[] SET_LINE_SPACE_32 = new byte[] { ESC_CHAR, 0x33, 32 };
+    private final static byte[] LINE_FEED = new byte[] { 0x0A };
+    private static final byte[] CENTER_ALIGN = { 0x1B, 0X61, 0X31 };
 
     private Socket mSocket;
 
@@ -253,7 +253,6 @@ public class NetPrinterAdapter implements PrinterAdapter {
         }
     }
 
-
     @Override
     public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
         final Bitmap bitmapImage = getBitmapFromURL(imageUrl);
@@ -282,8 +281,8 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 // the printer will resume to normal text printing
                 printerOutputStream.write(SELECT_BIT_IMAGE_MODE);
                 // Set nL and nH based on the width of the image
-                printerOutputStream.write(new byte[]{(byte) (0x00ff & pixels[y].length)
-                        , (byte) ((0xff00 & pixels[y].length) >> 8)});
+                printerOutputStream.write(
+                        new byte[] { (byte) (0x00ff & pixels[y].length), (byte) ((0xff00 & pixels[y].length) >> 8) });
                 for (int x = 0; x < pixels[y].length; x++) {
                     // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
                     printerOutputStream.write(recollectSlice(y, x, pixels));
@@ -329,8 +328,8 @@ public class NetPrinterAdapter implements PrinterAdapter {
                 // the printer will resume to normal text printing
                 printerOutputStream.write(SELECT_BIT_IMAGE_MODE);
                 // Set nL and nH based on the width of the image
-                printerOutputStream.write(new byte[]{(byte) (0x00ff & pixels[y].length)
-                        , (byte) ((0xff00 & pixels[y].length) >> 8)});
+                printerOutputStream.write(
+                        new byte[] { (byte) (0x00ff & pixels[y].length), (byte) ((0xff00 & pixels[y].length) >> 8) });
                 for (int x = 0; x < pixels[y].length; x++) {
                     // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
                     printerOutputStream.write(recollectSlice(y, x, pixels));

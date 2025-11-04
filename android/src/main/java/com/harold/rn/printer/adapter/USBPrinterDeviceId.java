@@ -13,20 +13,23 @@ public class USBPrinterDeviceId extends PrinterDeviceId {
         return productId;
     }
 
-
     public static USBPrinterDeviceId valueOf(Integer vendorId, Integer productId) {
         return new USBPrinterDeviceId(vendorId, productId);
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        if (!super.equals(o)) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        if (!super.equals(o))
+            return false;
 
         USBPrinterDeviceId that = (USBPrinterDeviceId) o;
 
-        if (!vendorId.equals(that.vendorId)) return false;
+        if (!vendorId.equals(that.vendorId))
+            return false;
         return productId.equals(that.productId);
 
     }
@@ -38,7 +41,7 @@ public class USBPrinterDeviceId extends PrinterDeviceId {
         return result;
     }
 
-    private USBPrinterDeviceId(Integer vendorId, Integer productId){
+    private USBPrinterDeviceId(Integer vendorId, Integer productId) {
         this.vendorId = vendorId;
         this.productId = productId;
     }

@@ -1,5 +1,10 @@
 import { BLEPrinter, NetPrinter, USBPrinter } from ".";
-import { ColumnAlignment, EDevicesPrinter, IPaperWidth } from "./constant";
+import {
+  ColumnAlignment,
+  EDevicesPrinter,
+  EPrintColumnType,
+  IPaperWidth,
+} from "./constant";
 
 export type IDevicesSelectPrinter =
   | ({ printerType: keyof typeof EDevicesPrinter } & Partial<
@@ -71,3 +76,15 @@ export interface INetPrinter {
   host: string;
   port: number;
 }
+
+export type IDataPrinter =
+  | {
+      key: string;
+      value: string;
+      kind: EPrintColumnType.RAW;
+    }
+  | {
+      key: string;
+      value: IPrintExpandColumn[];
+      kind: EPrintColumnType.COLUMN;
+    };

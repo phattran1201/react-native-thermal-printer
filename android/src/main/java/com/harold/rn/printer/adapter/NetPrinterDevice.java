@@ -21,7 +21,8 @@ public class NetPrinterDevice implements PrinterDevice {
     public WritableMap toRNWritableMap() {
         WritableMap deviceMap = Arguments.createMap();
         deviceMap.putString("device", new Gson().toJson(this.mNetPrinterDeviceId));
-        deviceMap.putString("device_name", this.mNetPrinterDeviceId.getHost() + ":" + this.mNetPrinterDeviceId.getPort());
+        deviceMap.putString("device_name",
+                this.mNetPrinterDeviceId.getHost() + ":" + this.mNetPrinterDeviceId.getPort());
         deviceMap.putString("host", this.mNetPrinterDeviceId.getHost());
         deviceMap.putInt("port", this.mNetPrinterDeviceId.getPort());
         return deviceMap;

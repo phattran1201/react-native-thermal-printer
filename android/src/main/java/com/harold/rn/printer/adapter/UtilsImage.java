@@ -64,7 +64,7 @@ public class UtilsImage {
     }
 
     public static byte[] recollectSlice(int y, int x, int[][] img) {
-        byte[] slices = new byte[]{0, 0, 0};
+        byte[] slices = new byte[] { 0, 0, 0 };
         for (int yy = y, i = 0; yy < y + 24 && i < 3; yy += 8, i++) {
             byte slice = 0;
             for (int b = 0; b < 8; b++) {

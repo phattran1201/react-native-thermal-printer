@@ -88,7 +88,7 @@ const USBPrinter = {
       RNUSBPrinter.getDeviceList(
         (printers: IUSBPrinter[]) =>
           resolve(
-            printers.map((printer) => ({
+            printers?.map((printer) => ({
               ...printer,
               device: JSON.parse(printer.device || "{}"),
             })),
@@ -222,7 +222,7 @@ const BLEPrinter = {
       RNBLEPrinter.getDeviceList(
         (printers: IBLEPrinter[]) =>
           resolve(
-            printers.map((printer) => ({
+            printers?.map((printer) => ({
               ...printer,
               device: JSON.parse(printer?.device || "{}"),
             })),
@@ -418,7 +418,7 @@ const NetPrinter = {
       RNNetPrinter.getDeviceList(
         (printers: INetPrinter[]) =>
           resolve(
-            printers.map((printer) => ({
+            printers?.map((printer) => ({
               ...printer,
               device: JSON.parse(printer?.device || "{}"),
             })),
