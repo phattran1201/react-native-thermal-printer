@@ -71,7 +71,7 @@ export const processColumnText = (
   columnAlignment: ColumnAlignment[],
   columnStyle: string[] = [],
 ): string => {
-  let rest_texts: [string, string, string] = ["", "", ""];
+  const rest_texts: [string, string, string] = ["", "", ""];
   let result = "";
   texts?.map((text, idx) => {
     const columnWidthAtRow = Math.round(columnWidth?.[idx]);

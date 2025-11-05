@@ -1,13 +1,21 @@
 {
   "name": "@haroldtran/react-native-thermal-printer",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "A React Native Library to support USB/BLE/Net printer",
   "author": "Harold Tran <phattran1201@gmail.com>",
   "homepage": "https://github.com/phattran1201/react-native-thermal-printer#readme",
-  "main": "src/index.tsx",
+  "main": "./lib/commonjs/index.js",
+  "types": "./lib/typescript/commonjs/src/index.d.ts",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "prebuild": "yarn install && yarn typecheck"
+    "build": "bob build",
+    "build:watch": "bob build:watch",
+    "clean": "rimraf lib dist android/build",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "check": "tsc --noEmit && bun run lint",
+    "prebuild": "bun run clean",
+    "prepublishOnly": "bun run check && bun run build",
+    "prepare": "bun run build"
   },
   "repository": {
     "type": "git",
@@ -19,6 +27,10 @@
   },
   "files": [
     "src",
+    "lib",
+    "!**/__tests__",
+    "!**/__fixtures__",
+    "!**/__mocks__",
     "android",
     "ios",
     "react-native-thermal-printer.podspec",
@@ -46,11 +58,53 @@
     "@types/react": "^16.9.46",
     "@types/react-native": "^0.63.9",
     "@types/react-test-renderer": "^16.9.3",
-    "jshint": "^2.13.1",
+    "eslint": "^8.57.0",
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint-plugin-react-native": "^4.1.0",
     "pod-install": "^0.1.10",
     "react": "^16.13.1",
     "react-native": "^0.64.1",
+    "react-native-builder-bob": "^0.40.14",
     "rimraf": "^3.0.2",
     "typescript": "^4.0.2"
-  }
+  },
+  "exports": {
+    ".": {
+      "source": "./src/index.tsx",
+      "import": {
+        "types": "./lib/typescript/module/src/index.d.ts",
+        "default": "./lib/module/index.js"
+      },
+      "require": {
+        "types": "./lib/typescript/commonjs/src/index.d.ts",
+        "default": "./lib/commonjs/index.js"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "module": "./lib/module/index.js",
+  "react-native-builder-bob": {
+    "source": "src",
+    "output": "lib",
+    "targets": [
+      [
+        "module",
+        {
+          "esm": true
+        }
+      ],
+      [
+        "commonjs",
+        {
+          "esm": true
+        }
+      ],
+      "typescript"
+    ]
+  },
+  "eslintIgnore": [
+    "node_modules/",
+    "lib/"
+  ]
 }

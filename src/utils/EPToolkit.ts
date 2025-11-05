@@ -76,12 +76,12 @@ const default_options: IOptions = {
 export function exchange_text(text: string, options: IOptions): Buffer {
   const m_options = options || default_options;
 
-  let bytes = new BufferHelper();
+  const bytes = new BufferHelper();
   bytes.concat(init_printer_bytes);
   bytes.concat(default_space_bytes);
   let temp = "";
   for (let i = 0; i < text.length; i++) {
-    let ch = text[i];
+    const ch = text[i];
     switch (ch) {
       case "<":
         bytes.concat(iconv.encode(temp, m_options.encoding));

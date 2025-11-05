@@ -1,3 +1,7 @@
+export * from "./constant";
+export * from "./type";
+export * from "./utils";
+
 import { NativeEventEmitter, NativeModules, Platform } from "react-native";
 import { ColumnAlignment } from "./constant";
 import {
@@ -10,9 +14,6 @@ import {
 import * as EPToolkit from "./utils/EPToolkit";
 import { connectToHost } from "./utils/net-connect";
 import { processColumnText } from "./utils/print-column";
-export * from "./constant";
-export * from "./type";
-export * from "./utils/printer-commands";
 
 const RNUSBPrinter = NativeModules.RNUSBPrinter;
 const RNBLEPrinter = NativeModules.RNBLEPrinter;
@@ -52,7 +53,7 @@ const billTo64Buffer = (text: string, opts: PrinterOptions) => {
 };
 
 const textPreprocessingIOS = (text: string, canCut = true, beep = true) => {
-  let options = {
+  const options = {
     beep: beep,
     cut: canCut,
   };
@@ -349,7 +350,7 @@ const BLEPrinter = {
    */
   printRaw: (text: string): void => {
     if (Platform.OS === "ios") {
-      var processedText = textPreprocessingIOS(text, false, false);
+      const processedText = textPreprocessingIOS(text, false, false);
 
       RNBLEPrinter.printRawData(
         processedText.text,

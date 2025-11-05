@@ -267,9 +267,9 @@ export const COMMANDS: Commands = {
      * @returns Chuỗi lệnh ESC/POS tương ứng
      */
     TXT_CUSTOM_SIZE: function (width: number, height: number) {
-      let widthDec = (width - 1) * 16;
-      let heightDec = height - 1;
-      let sizeDec = widthDec + heightDec;
+      const widthDec = (width - 1) * 16;
+      const heightDec = height - 1;
+      const sizeDec = widthDec + heightDec;
       return "\x1d\x21" + String.fromCharCode(sizeDec);
     },
 

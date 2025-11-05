@@ -1,4 +1,3 @@
-// @ts-ignore
 import Ping from "react-native-ping";
 
 export const connectToHost = (ipAddress: string, timeout = 4000) => {
