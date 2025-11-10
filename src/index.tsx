@@ -446,8 +446,10 @@ const NetPrinter = {
             }),
           (error: Error) => reject(error),
         );
-      } catch (error: any) {
-        reject(error?.message || `Connect to ${host} fail`);
+      } catch (error) {
+        reject(
+          error instanceof Error ? error.message : `Connect to ${host} fail`,
+        );
       }
     }),
 

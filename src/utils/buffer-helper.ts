@@ -30,7 +30,13 @@ export default class BufferHelper {
   toString = (encoding: BufferEncoding): string =>
     this.toBuffer().toString(encoding);
 
-  load = (stream: any, callback: any) => {
+  load = (
+    stream: {
+      on: (arg0: string, arg1: { (trunk: Buffer): void }) => void;
+      once: (arg0: string, arg1: unknown) => void;
+    },
+    callback: (arg0: null, arg1: Buffer) => void,
+  ) => {
     stream.on("data", (trunk: Buffer) => {
       this.concat(trunk);
     });
