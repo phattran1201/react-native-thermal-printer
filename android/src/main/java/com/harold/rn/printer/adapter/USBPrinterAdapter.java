@@ -1,8 +1,5 @@
 package com.harold.rn.printer.adapter;
 
-import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
-import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
-
 import android.os.Build;
 import android.annotation.SuppressLint;
 import android.app.PendingIntent;
@@ -20,17 +17,11 @@ import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -48,13 +39,6 @@ public class USBPrinterAdapter implements PrinterAdapter {
     private UsbEndpoint mEndPoint;
     private static final String ACTION_USB_PERMISSION = "com.harold.rn.USBPrinter.USB_PERMISSION";
     private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
-
-    private final static char ESC_CHAR = 0x1B;
-    private static final byte[] SELECT_BIT_IMAGE_MODE = { 0x1B, 0x2A, 33 };
-    private final static byte[] SET_LINE_SPACE_24 = new byte[] { ESC_CHAR, 0x33, 24 };
-    private final static byte[] SET_LINE_SPACE_32 = new byte[] { ESC_CHAR, 0x33, 32 };
-    private final static byte[] LINE_FEED = new byte[] { 0x0A };
-    private static final byte[] CENTER_ALIGN = { 0x1B, 0X61, 0X31 };
 
     private USBPrinterAdapter() {
     }
@@ -254,68 +238,33 @@ public class USBPrinterAdapter implements PrinterAdapter {
         }
     }
 
-    public static Bitmap getBitmapFromURL(String src) {
-        try {
-            URL url = new URL(src);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            Bitmap myBitmap = BitmapFactory.decodeStream(input);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            myBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-
-            return myBitmap;
-        } catch (IOException e) {
-            // Log exception
-            return null;
-        }
-    }
 
     @Override
     public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        final Bitmap bitmapImage = getBitmapFromURL(imageUrl);
+        final Bitmap bitmapImage = UtilsImage.getBitmapFromURL(imageUrl);
 
         if (bitmapImage == null) {
             errorCallback.invoke("image not found");
             return;
         }
 
-        Log.v(LOG_TAG, "start to print image data " + bitmapImage);
+        Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
         boolean isConnected = openConnection();
         if (isConnected) {
             Log.v(LOG_TAG, "Connected to device");
-            int[][] pixels = getPixelsSlow(bitmapImage, imageWidth, imageHeight);
 
-            int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, SET_LINE_SPACE_24, SET_LINE_SPACE_24.length, 100000);
+            // Prepare image raster data using shared utility
+            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
-            b = mUsbDeviceConnection.bulkTransfer(mEndPoint, CENTER_ALIGN, CENTER_ALIGN.length, 100000);
+            // Center align before printing
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length, 100000);
 
-            for (int y = 0; y < pixels.length; y += 24) {
-                // Like I said before, when done sending data,
-                // the printer will resume to normal text printing
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, SELECT_BIT_IMAGE_MODE, SELECT_BIT_IMAGE_MODE.length,
-                        100000);
+            // Send ALL image data in ONE bulk transfer - much faster!
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
 
-                // Set nL and nH based on the width of the image
-                byte[] row = new byte[] { (byte) (0x00ff & pixels[y].length),
-                        (byte) ((0xff00 & pixels[y].length) >> 8) };
-
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, row, row.length, 100000);
-
-                for (int x = 0; x < pixels[y].length; x++) {
-                    // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
-                    byte[] slice = recollectSlice(y, x, pixels);
-                    mUsbDeviceConnection.bulkTransfer(mEndPoint, slice, slice.length, 100000);
-                }
-
-                // Do a line feed, if not the printing will resume on the same line
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, LINE_FEED, LINE_FEED.length, 100000);
-            }
-
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, SET_LINE_SPACE_32, SET_LINE_SPACE_32.length, 100000);
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, LINE_FEED, LINE_FEED.length, 100000);
+            // Line feed after image
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.LINE_FEED, UtilsImage.LINE_FEED.length, 100000);
         } else {
             String msg = "failed to connected to device";
             Log.v(LOG_TAG, msg);
@@ -331,40 +280,22 @@ public class USBPrinterAdapter implements PrinterAdapter {
             return;
         }
 
-        Log.v(LOG_TAG, "start to print image data " + bitmapImage);
+        Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
         boolean isConnected = openConnection();
         if (isConnected) {
             Log.v(LOG_TAG, "Connected to device");
-            int[][] pixels = getPixelsSlow(bitmapImage, imageWidth, imageHeight);
 
-            int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, SET_LINE_SPACE_24, SET_LINE_SPACE_24.length, 100000);
+            // Prepare image raster data using shared utility
+            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
-            b = mUsbDeviceConnection.bulkTransfer(mEndPoint, CENTER_ALIGN, CENTER_ALIGN.length, 100000);
+            // Center align before printing
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length, 100000);
 
-            for (int y = 0; y < pixels.length; y += 24) {
-                // Like I said before, when done sending data,
-                // the printer will resume to normal text printing
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, SELECT_BIT_IMAGE_MODE, SELECT_BIT_IMAGE_MODE.length,
-                        100000);
+            // Send ALL image data in ONE bulk transfer - much faster!
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
 
-                // Set nL and nH based on the width of the image
-                byte[] row = new byte[] { (byte) (0x00ff & pixels[y].length),
-                        (byte) ((0xff00 & pixels[y].length) >> 8) };
-
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, row, row.length, 100000);
-
-                for (int x = 0; x < pixels[y].length; x++) {
-                    // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
-                    byte[] slice = recollectSlice(y, x, pixels);
-                    mUsbDeviceConnection.bulkTransfer(mEndPoint, slice, slice.length, 100000);
-                }
-
-                // Do a line feed, if not the printing will resume on the same line
-                mUsbDeviceConnection.bulkTransfer(mEndPoint, LINE_FEED, LINE_FEED.length, 100000);
-            }
-
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, SET_LINE_SPACE_32, SET_LINE_SPACE_32.length, 100000);
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, LINE_FEED, LINE_FEED.length, 100000);
+            // Line feed after image
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.LINE_FEED, UtilsImage.LINE_FEED.length, 100000);
         } else {
             String msg = "failed to connected to device";
             Log.v(LOG_TAG, msg);

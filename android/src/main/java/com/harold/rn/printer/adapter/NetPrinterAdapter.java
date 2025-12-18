@@ -1,8 +1,5 @@
 package com.harold.rn.printer.adapter;
 
-import static com.harold.rn.printer.adapter.UtilsImage.getPixelsSlow;
-import static com.harold.rn.printer.adapter.UtilsImage.recollectSlice;
-
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.net.wifi.WifiManager;
@@ -17,18 +14,13 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import android.graphics.BitmapFactory;
 import androidx.annotation.RequiresApi;
 
 public class NetPrinterAdapter implements PrinterAdapter {
@@ -37,21 +29,11 @@ public class NetPrinterAdapter implements PrinterAdapter {
     private final String LOG_TAG = "RNNetPrinter";
     private NetPrinterDevice mNetDevice;
 
-    // {TODO- support other ports later}
-
     private final int[] PRINTER_ON_PORTS = { 9100 };
     private static final String EVENT_SCANNER_RESOLVED = "scannerResolved";
     private static final String EVENT_SCANNER_RUNNING = "scannerRunning";
 
-    private final static char ESC_CHAR = 0x1B;
-    private static final byte[] SELECT_BIT_IMAGE_MODE = { 0x1B, 0x2A, 33 };
-    private final static byte[] SET_LINE_SPACE_24 = new byte[] { ESC_CHAR, 0x33, 24 };
-    private final static byte[] SET_LINE_SPACE_32 = new byte[] { ESC_CHAR, 0x33, 32 };
-    private final static byte[] LINE_FEED = new byte[] { 0x0A };
-    private static final byte[] CENTER_ALIGN = { 0x1B, 0X61, 0X31 };
-
     private Socket mSocket;
-
     private boolean isRunning = false;
 
     private NetPrinterAdapter() {
@@ -234,28 +216,11 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     }
 
-    public static Bitmap getBitmapFromURL(String src) {
-        try {
-            URL url = new URL(src);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            Bitmap myBitmap = BitmapFactory.decodeStream(input);
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            myBitmap.compress(Bitmap.CompressFormat.PNG, 100, baos);
-
-            return myBitmap;
-        } catch (IOException e) {
-            // Log exception
-            return null;
-        }
-    }
 
     @Override
     public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        final Bitmap bitmapImage = getBitmapFromURL(imageUrl);
+        final Bitmap bitmapImage = UtilsImage.getBitmapFromURL(imageUrl);
 
         if (bitmapImage == null) {
             errorCallback.invoke("image not found");
@@ -267,32 +232,23 @@ public class NetPrinterAdapter implements PrinterAdapter {
             return;
         }
 
+        Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
         final Socket socket = this.mSocket;
-        try {
-            int[][] pixels = getPixelsSlow(bitmapImage, imageWidth, imageHeight);
 
+        try {
             OutputStream printerOutputStream = socket.getOutputStream();
 
-            printerOutputStream.write(SET_LINE_SPACE_24);
-            printerOutputStream.write(CENTER_ALIGN);
+            // Prepare image raster data using shared utility
+            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
-            for (int y = 0; y < pixels.length; y += 24) {
-                // Like I said before, when done sending data,
-                // the printer will resume to normal text printing
-                printerOutputStream.write(SELECT_BIT_IMAGE_MODE);
-                // Set nL and nH based on the width of the image
-                printerOutputStream.write(
-                        new byte[] { (byte) (0x00ff & pixels[y].length), (byte) ((0xff00 & pixels[y].length) >> 8) });
-                for (int x = 0; x < pixels[y].length; x++) {
-                    // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
-                    printerOutputStream.write(recollectSlice(y, x, pixels));
-                }
+            // Center align before printing
+            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
 
-                // Do a line feed, if not the printing will resume on the same line
-                printerOutputStream.write(LINE_FEED);
-            }
-            printerOutputStream.write(SET_LINE_SPACE_32);
-            printerOutputStream.write(LINE_FEED);
+            // Send ALL image data in ONE transfer - much faster!
+            printerOutputStream.write(rasterData);
+
+            // Line feed after image
+            printerOutputStream.write(UtilsImage.LINE_FEED);
 
             printerOutputStream.flush();
         } catch (IOException e) {
@@ -313,33 +269,23 @@ public class NetPrinterAdapter implements PrinterAdapter {
             return;
         }
 
+        Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
         final Socket socket = this.mSocket;
 
         try {
-            int[][] pixels = getPixelsSlow(bitmapImage, imageWidth, imageHeight);
-
             OutputStream printerOutputStream = socket.getOutputStream();
 
-            printerOutputStream.write(SET_LINE_SPACE_24);
-            printerOutputStream.write(CENTER_ALIGN);
+            // Prepare image raster data using shared utility
+            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
-            for (int y = 0; y < pixels.length; y += 24) {
-                // Like I said before, when done sending data,
-                // the printer will resume to normal text printing
-                printerOutputStream.write(SELECT_BIT_IMAGE_MODE);
-                // Set nL and nH based on the width of the image
-                printerOutputStream.write(
-                        new byte[] { (byte) (0x00ff & pixels[y].length), (byte) ((0xff00 & pixels[y].length) >> 8) });
-                for (int x = 0; x < pixels[y].length; x++) {
-                    // for each stripe, recollect 3 bytes (3 bytes = 24 bits)
-                    printerOutputStream.write(recollectSlice(y, x, pixels));
-                }
+            // Center align before printing
+            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
 
-                // Do a line feed, if not the printing will resume on the same line
-                printerOutputStream.write(LINE_FEED);
-            }
-            printerOutputStream.write(SET_LINE_SPACE_32);
-            printerOutputStream.write(LINE_FEED);
+            // Send ALL image data in ONE transfer - much faster!
+            printerOutputStream.write(rasterData);
+
+            // Line feed after image
+            printerOutputStream.write(UtilsImage.LINE_FEED);
 
             printerOutputStream.flush();
         } catch (IOException e) {

@@ -1,9 +1,6 @@
 package com.harold.rn.printer.adapter;
 
-import android.app.Activity;
-import android.content.Context;
 import android.graphics.Bitmap;
-import android.telecom.Call;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
