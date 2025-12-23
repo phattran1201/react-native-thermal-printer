@@ -40,6 +40,14 @@ public class USBPrinterAdapter implements PrinterAdapter {
     private static final String ACTION_USB_PERMISSION = "com.harold.rn.USBPrinter.USB_PERMISSION";
     private static final String EVENT_USB_DEVICE_ATTACHED = "usbAttached";
 
+    // Pending callbacks for async permission request
+    private Callback pendingSuccessCallback;
+    private Callback pendingErrorCallback;
+
+    // Remember selected device for auto-reconnect when plugged back in
+    private int selectedVendorId = -1;
+    private int selectedProductId = -1;
+
     private USBPrinterAdapter() {
     }
 
@@ -58,16 +66,32 @@ public class USBPrinterAdapter implements PrinterAdapter {
                 synchronized (this) {
                     UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        assert usbDevice != null;
-                        Log.i(LOG_TAG,
-                                "success to grant permission for device " + usbDevice.getDeviceId() + ", vendor_id: "
-                                        + usbDevice.getVendorId() + " product_id: " + usbDevice.getProductId());
-                        mUsbDevice = usbDevice;
+                        if (usbDevice != null) {
+                            Log.i(LOG_TAG,
+                                    "success to grant permission for device " + usbDevice.getDeviceId() + ", vendor_id: "
+                                            + usbDevice.getVendorId() + " product_id: " + usbDevice.getProductId());
+                            mUsbDevice = usbDevice;
+
+                            // Call pending success callback
+                            if (pendingSuccessCallback != null) {
+                                pendingSuccessCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
+                                pendingSuccessCallback = null;
+                                pendingErrorCallback = null;
+                            }
+                        }
                     } else {
-                        assert usbDevice != null;
-                        Toast.makeText(context,
-                                "User refuses to obtain USB device permissions" + usbDevice.getDeviceName(),
-                                Toast.LENGTH_LONG).show();
+                        String errorMsg = "User refused USB device permissions";
+                        if (usbDevice != null) {
+                            errorMsg += ": " + usbDevice.getDeviceName();
+                        }
+                        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show();
+
+                        // Call pending error callback
+                        if (pendingErrorCallback != null) {
+                            pendingErrorCallback.invoke(errorMsg);
+                            pendingSuccessCallback = null;
+                            pendingErrorCallback = null;
+                        }
                     }
                 }
             } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
@@ -77,6 +101,25 @@ public class USBPrinterAdapter implements PrinterAdapter {
                 }
             } else if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action)
                     || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+
+                // Get the attached device
+                UsbDevice attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+
+                // Auto request permission if this is the previously selected printer
+                if (attachedDevice != null && selectedVendorId > 0 && selectedProductId > 0) {
+                    if (attachedDevice.getVendorId() == selectedVendorId
+                            && attachedDevice.getProductId() == selectedProductId) {
+                        Log.i(LOG_TAG, "Previously selected printer reconnected, requesting permission...");
+                        if (!mUSBManager.hasPermission(attachedDevice)) {
+                            mUSBManager.requestPermission(attachedDevice, mPermissionIndent);
+                        } else {
+                            mUsbDevice = attachedDevice;
+                            Log.i(LOG_TAG, "Permission already granted for reconnected device");
+                        }
+                    }
+                }
+
+                // Always emit event to JS
                 synchronized (this) {
                     if (mContext != null) {
                         ((ReactApplicationContext) mContext)
@@ -143,35 +186,61 @@ public class USBPrinterAdapter implements PrinterAdapter {
         }
 
         USBPrinterDeviceId usbPrinterDeviceId = (USBPrinterDeviceId) printerDeviceId;
+
+        // Save selected device for auto-reconnect feature
+        selectedVendorId = usbPrinterDeviceId.getVendorId();
+        selectedProductId = usbPrinterDeviceId.getProductId();
+
+        // Check if already connected to the same device
         if (mUsbDevice != null && mUsbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
                 && mUsbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
-            Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
-            if (!mUSBManager.hasPermission(mUsbDevice)) {
+            Log.i(LOG_TAG, "already selected device");
+
+            if (mUSBManager.hasPermission(mUsbDevice)) {
+                // Already have permission, return immediately
+                successCallback.invoke(new USBPrinterDevice(mUsbDevice).toRNWritableMap());
+                return;
+            } else {
+                // Need to request permission - store callbacks and wait for broadcast
                 closeConnectionIfExists();
+                pendingSuccessCallback = successCallback;
+                pendingErrorCallback = errorCallback;
                 mUSBManager.requestPermission(mUsbDevice, mPermissionIndent);
+                return;
             }
-            successCallback.invoke(new USBPrinterDevice(mUsbDevice).toRNWritableMap());
-            return;
         }
+
         closeConnectionIfExists();
+
         if (mUSBManager.getDeviceList().size() == 0) {
             errorCallback.invoke("Device list is empty, can not choose device");
             return;
         }
+
+        // Find the requested device
         for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
             if (usbDevice.getVendorId() == usbPrinterDeviceId.getVendorId()
                     && usbDevice.getProductId() == usbPrinterDeviceId.getProductId()) {
                 Log.v(LOG_TAG, "request for device: vendor_id: " + usbPrinterDeviceId.getVendorId() + ", product_id: "
                         + usbPrinterDeviceId.getProductId());
-                closeConnectionIfExists();
-                mUSBManager.requestPermission(usbDevice, mPermissionIndent);
-                successCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
-                return;
+
+                if (mUSBManager.hasPermission(usbDevice)) {
+                    // Already have permission, set device and return
+                    mUsbDevice = usbDevice;
+                    successCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
+                    return;
+                } else {
+                    // Need to request permission - store callbacks and wait for broadcast
+                    pendingSuccessCallback = successCallback;
+                    pendingErrorCallback = errorCallback;
+                    mUSBManager.requestPermission(usbDevice, mPermissionIndent);
+                    // DO NOT call successCallback here - wait for BroadcastReceiver
+                    return;
+                }
             }
         }
 
         errorCallback.invoke("can not find specified device");
-        return;
     }
 
     private boolean openConnection() {

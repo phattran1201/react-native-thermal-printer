@@ -74,11 +74,37 @@ public class RNUSBPrinterModule extends ReactContextBaseJavaModule implements RN
     @ReactMethod
     @Override
     public void printImageBase64(String base64, int imageWidth, int imageHeight, Callback errorCallback) {
-        // String imageBase64 = "data:image/png;base64," + imageUrl;
-        // String base64ImageProcessed = imageUrl.split(",")[1];
-        byte[] decodedString = Base64.decode(base64, Base64.DEFAULT);
-        Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-        adapter.printImageBase64(decodedByte, imageWidth, imageHeight, errorCallback);
+        try {
+            // Remove data URI prefix if present (e.g., "data:image/png;base64,")
+            String base64Data = base64;
+            if (base64Data != null && base64Data.contains(",")) {
+                base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
+            }
+
+            // Remove any whitespace, newlines, or carriage returns that may cause "bad base64" error
+            if (base64Data != null) {
+                base64Data = base64Data.replaceAll("\\s+", "");
+            }
+
+            if (base64Data == null || base64Data.isEmpty()) {
+                errorCallback.invoke("Base64 string is empty or null");
+                return;
+            }
+
+            byte[] decodedString = Base64.decode(base64Data, Base64.DEFAULT);
+            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
+
+            if (decodedByte == null) {
+                errorCallback.invoke("Failed to decode base64 image - invalid image data");
+                return;
+            }
+
+            adapter.printImageBase64(decodedByte, imageWidth, imageHeight, errorCallback);
+        } catch (IllegalArgumentException e) {
+            errorCallback.invoke("Invalid base64 string: " + e.getMessage());
+        } catch (Exception e) {
+            errorCallback.invoke("Error decoding image: " + e.getMessage());
+        }
     }
 
     @ReactMethod
