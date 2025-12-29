@@ -1,10 +1,8 @@
 package com.harold.rn.printer.adapter;
 
 import android.content.Context;
-import android.graphics.Bitmap;
 import android.net.wifi.WifiManager;
 import android.os.Build;
-import android.util.Base64;
 import android.util.Log;
 
 import com.facebook.react.bridge.Arguments;
@@ -23,7 +21,7 @@ import java.util.List;
 
 import androidx.annotation.RequiresApi;
 
-public class NetPrinterAdapter implements PrinterAdapter {
+public class NetPrinterAdapter extends BaseStreamPrinterAdapter {
     private static NetPrinterAdapter mInstance;
     private ReactApplicationContext mContext;
     private final String LOG_TAG = "RNNetPrinter";
@@ -36,17 +34,79 @@ public class NetPrinterAdapter implements PrinterAdapter {
     private Socket mSocket;
     private boolean isRunning = false;
 
-    private NetPrinterAdapter() {
+    // Store last connected device for auto-reconnect
+    private String lastConnectedHost = null;
+    private int lastConnectedPort = -1;
 
+    // Connection timeout in milliseconds
+    private static final int CONNECTION_TIMEOUT_MS = 5000;
+
+    private NetPrinterAdapter() {
     }
 
     public static NetPrinterAdapter getInstance() {
         if (mInstance == null) {
             mInstance = new NetPrinterAdapter();
-
         }
         return mInstance;
     }
+
+    // ==================== BaseStreamPrinterAdapter Implementation
+    // ====================
+
+    @Override
+    protected String getLogTag() {
+        return LOG_TAG;
+    }
+
+    @Override
+    protected boolean isConnectionValid() {
+        return mSocket != null && !mSocket.isClosed() && mSocket.isConnected();
+    }
+
+    @Override
+    protected OutputStream getRawOutputStream() throws IOException {
+        return mSocket != null ? mSocket.getOutputStream() : null;
+    }
+
+    @Override
+    protected String getConnectionErrorMessage() {
+        return "Net connection is not built, may be you forgot to connectPrinter";
+    }
+
+    @Override
+    protected boolean tryReconnect() {
+        if (lastConnectedHost == null || lastConnectedPort < 0) {
+            Log.w(LOG_TAG, "No previous connection to reconnect to");
+            return false;
+        }
+
+        Log.i(LOG_TAG, "Attempting to reconnect to " + lastConnectedHost + ":" + lastConnectedPort);
+
+        // Close existing connection first
+        closeConnectionIfExists();
+
+        try {
+            Socket socket = new Socket();
+            socket.connect(new InetSocketAddress(lastConnectedHost, lastConnectedPort), CONNECTION_TIMEOUT_MS);
+
+            if (socket.isConnected()) {
+                this.mSocket = socket;
+                this.mNetDevice = new NetPrinterDevice(lastConnectedHost, lastConnectedPort);
+                Log.i(LOG_TAG, "Reconnect successful!");
+                return true;
+            } else {
+                socket.close();
+                Log.e(LOG_TAG, "Failed to reconnect: socket not connected");
+                return false;
+            }
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Reconnect failed: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // ==================== PrinterAdapter Implementation ====================
 
     @Override
     public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
@@ -56,9 +116,6 @@ public class NetPrinterAdapter implements PrinterAdapter {
 
     @Override
     public List<PrinterDevice> getDeviceList(Callback errorCallback) {
-        // errorCallback.invoke("do not need to invoke get device list for net
-        // printer");
-        // Use emitter instancee get devicelist to non block main thread
         this.scan();
         return new ArrayList<>();
     }
@@ -130,10 +187,8 @@ public class NetPrinterAdapter implements PrinterAdapter {
         try {
 
             try (Socket crunchifySocket = new Socket()) {
-                // Connects this socket to the server with a specified timeout value.
                 crunchifySocket.connect(new InetSocketAddress(address, port), 100);
             }
-            // Return true if connection successful
             return true;
         } catch (IOException exception) {
             exception.printStackTrace();
@@ -149,7 +204,7 @@ public class NetPrinterAdapter implements PrinterAdapter {
     public void selectDevice(PrinterDeviceId printerDeviceId, Callback sucessCallback, Callback errorCallback) {
         NetPrinterDeviceId netPrinterDeviceId = (NetPrinterDeviceId) printerDeviceId;
 
-        if (this.mSocket != null && !this.mSocket.isClosed()
+        if (this.mSocket != null && !this.mSocket.isClosed() && this.mNetDevice != null
                 && mNetDevice.getPrinterDeviceId().equals(netPrinterDeviceId)) {
             Log.i(LOG_TAG, "already selected device, do not need repeat to connect");
             sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
@@ -157,13 +212,25 @@ public class NetPrinterAdapter implements PrinterAdapter {
         }
 
         try {
-            Socket socket = new Socket(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+            closeConnectionIfExists();
+
+            Socket socket = new Socket();
+            socket.connect(new InetSocketAddress(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort()),
+                    CONNECTION_TIMEOUT_MS);
+
             if (socket.isConnected()) {
-                closeConnectionIfExists();
                 this.mSocket = socket;
                 this.mNetDevice = new NetPrinterDevice(netPrinterDeviceId.getHost(), netPrinterDeviceId.getPort());
+
+                // Store connection info for auto-reconnect
+                this.lastConnectedHost = netPrinterDeviceId.getHost();
+                this.lastConnectedPort = netPrinterDeviceId.getPort();
+                Log.i(LOG_TAG, "Connected to device, saved for auto-reconnect: " + lastConnectedHost + ":"
+                        + lastConnectedPort);
+
                 sucessCallback.invoke(this.mNetDevice.toRNWritableMap());
             } else {
+                socket.close();
                 errorCallback.invoke("unable to build connection with host: " + netPrinterDeviceId.getHost()
                         + ", port: " + netPrinterDeviceId.getPort());
                 return;
@@ -184,113 +251,13 @@ public class NetPrinterAdapter implements PrinterAdapter {
                     e.printStackTrace();
                 }
             }
-
             this.mSocket = null;
-
-        }
-    }
-
-    @Override
-    public void printRawData(String rawBase64Data, Callback errorCallback) {
-        if (this.mSocket == null) {
-            errorCallback.invoke("Net connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
-        final String rawData = rawBase64Data;
-        final Socket socket = this.mSocket;
-        Log.v(LOG_TAG, "start to print raw data " + rawBase64Data);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
-                    OutputStream printerOutputStream = socket.getOutputStream();
-                    printerOutputStream.write(bytes, 0, bytes.length);
-                    printerOutputStream.flush();
-                } catch (IOException e) {
-                    Log.e(LOG_TAG, "failed to print data" + rawData);
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-
-    }
-
-
-
-    @Override
-    public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        final Bitmap bitmapImage = UtilsImage.getBitmapFromURL(imageUrl);
-
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
         }
 
-        if (this.mSocket == null) {
-            errorCallback.invoke("Net connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
+        // Clear cached OutputStream from base class
+        clearOutputStream();
 
-        Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
-        final Socket socket = this.mSocket;
-
-        try {
-            OutputStream printerOutputStream = socket.getOutputStream();
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
-
-            // Send ALL image data in ONE transfer - much faster!
-            printerOutputStream.write(rasterData);
-
-            // Line feed after image
-            printerOutputStream.write(UtilsImage.LINE_FEED);
-
-            printerOutputStream.flush();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "failed to print data");
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void printImageBase64(final Bitmap bitmapImage, int imageWidth, int imageHeight, Callback errorCallback) {
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
-        }
-
-        if (this.mSocket == null) {
-            errorCallback.invoke("Net connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
-
-        Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
-        final Socket socket = this.mSocket;
-
-        try {
-            OutputStream printerOutputStream = socket.getOutputStream();
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
-
-            // Send ALL image data in ONE transfer - much faster!
-            printerOutputStream.write(rasterData);
-
-            // Line feed after image
-            printerOutputStream.write(UtilsImage.LINE_FEED);
-
-            printerOutputStream.flush();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "failed to print data");
-            e.printStackTrace();
-        }
+        // Note: Do NOT clear lastConnectedHost/lastConnectedPort - we need them for
+        // reconnect
     }
 }

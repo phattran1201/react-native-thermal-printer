@@ -3,8 +3,6 @@ package com.harold.rn.printer.adapter;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.graphics.Bitmap;
-import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -18,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class BLEPrinterAdapter implements PrinterAdapter {
+public class BLEPrinterAdapter extends BaseStreamPrinterAdapter {
 
     private static BLEPrinterAdapter mInstance;
 
@@ -27,6 +25,9 @@ public class BLEPrinterAdapter implements PrinterAdapter {
     private BluetoothDevice mBluetoothDevice;
     private BluetoothSocket mBluetoothSocket;
     private ReactApplicationContext mContext;
+
+    // Store last connected device for auto-reconnect
+    private String lastConnectedMacAddress = null;
 
     private BLEPrinterAdapter() {
     }
@@ -37,6 +38,73 @@ public class BLEPrinterAdapter implements PrinterAdapter {
         }
         return mInstance;
     }
+
+    // ==================== BaseStreamPrinterAdapter Implementation
+    // ====================
+
+    @Override
+    protected String getLogTag() {
+        return LOG_TAG;
+    }
+
+    @Override
+    protected boolean isConnectionValid() {
+        return mBluetoothSocket != null && mBluetoothSocket.isConnected();
+    }
+
+    @Override
+    protected OutputStream getRawOutputStream() throws IOException {
+        return mBluetoothSocket != null ? mBluetoothSocket.getOutputStream() : null;
+    }
+
+    @Override
+    protected String getConnectionErrorMessage() {
+        return "bluetooth connection is not built, may be you forgot to connectPrinter";
+    }
+
+    @Override
+    protected boolean tryReconnect() {
+        if (lastConnectedMacAddress == null) {
+            Log.w(LOG_TAG, "No previous connection to reconnect to");
+            return false;
+        }
+
+        BluetoothAdapter bluetoothAdapter = getBTAdapter();
+        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled()) {
+            Log.e(LOG_TAG, "Bluetooth adapter not available or not enabled");
+            return false;
+        }
+
+        // Find the device by MAC address
+        Set<BluetoothDevice> pairedDevices = bluetoothAdapter.getBondedDevices();
+        for (BluetoothDevice device : pairedDevices) {
+            if (device.getAddress().equals(lastConnectedMacAddress)) {
+                Log.i(LOG_TAG, "Found device, attempting to reconnect: " + lastConnectedMacAddress);
+
+                // Close existing connection first
+                closeConnectionIfExists();
+
+                try {
+                    connectBluetoothDevice(device, false);
+                    return true;
+                } catch (IOException e) {
+                    Log.w(LOG_TAG, "First connection attempt failed, trying fallback method");
+                    try {
+                        connectBluetoothDevice(device, true);
+                        return true;
+                    } catch (IOException er) {
+                        Log.e(LOG_TAG, "Reconnect failed: " + er.getMessage());
+                        return false;
+                    }
+                }
+            }
+        }
+
+        Log.e(LOG_TAG, "Device with MAC " + lastConnectedMacAddress + " not found in paired devices");
+        return false;
+    }
+
+    // ==================== PrinterAdapter Implementation ====================
 
     @Override
     public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
@@ -52,7 +120,6 @@ public class BLEPrinterAdapter implements PrinterAdapter {
         } else {
             successCallback.invoke();
         }
-
     }
 
     private static BluetoothAdapter getBTAdapter() {
@@ -73,9 +140,47 @@ public class BLEPrinterAdapter implements PrinterAdapter {
         }
         Set<BluetoothDevice> pairedDevices = getBTAdapter().getBondedDevices();
         for (BluetoothDevice device : pairedDevices) {
-            printerDevices.add(new BLEPrinterDevice(device));
+            if (isPrinterDevice(device)) {
+                printerDevices.add(new BLEPrinterDevice(device));
+            }
         }
         return printerDevices;
+    }
+
+    /**
+     * Check if Bluetooth device is likely a printer. Filters by BluetoothClass
+     * (IMAGING/PRINTER) or common printer name patterns.
+     */
+    private boolean isPrinterDevice(BluetoothDevice device) {
+        // Check by BluetoothClass
+        if (device.getBluetoothClass() != null) {
+            int majorClass = device.getBluetoothClass().getMajorDeviceClass();
+            int deviceClass = device.getBluetoothClass().getDeviceClass();
+
+            // Major class IMAGING (0x0600) includes printers
+            if (majorClass == 0x0600) {
+                return true;
+            }
+
+            // Check for printer-specific device class
+            // 0x0680 = Printer in IMAGING major class
+            if (deviceClass == 0x0680) {
+                return true;
+            }
+        }
+
+        // Fallback: check device name for common printer keywords
+        String name = device.getName();
+        if (name != null) {
+            String lowerName = name.toLowerCase();
+            return lowerName.contains("printer") || lowerName.contains("print") || lowerName.contains("pos")
+                    || lowerName.contains("thermal") || lowerName.contains("receipt") || lowerName.contains("label")
+                    || lowerName.contains("esc") || lowerName.contains("tsc") || lowerName.contains("epson")
+                    || lowerName.contains("zebra") || lowerName.contains("star") || lowerName.contains("bixolon")
+                    || lowerName.contains("xprinter") || lowerName.contains("hprt") || lowerName.contains("sewoo");
+        }
+
+        return false;
     }
 
     @Override
@@ -135,16 +240,23 @@ public class BLEPrinterAdapter implements PrinterAdapter {
             try {
                 this.mBluetoothSocket = (BluetoothSocket) device.getClass()
                         .getMethod("createRfcommSocket", new Class[] { int.class }).invoke(device, 1);
+                if (this.mBluetoothSocket != null) {
+                    this.mBluetoothSocket.connect();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
+                throw new IOException("Failed to create or connect socket: " + e.getMessage());
             }
         } else {
             this.mBluetoothSocket = device.createInsecureRfcommSocketToServiceRecord(uuid);
             this.mBluetoothSocket.connect();
         }
 
-        this.mBluetoothDevice = device;// 最后一步执行
+        this.mBluetoothDevice = device;
 
+        // Store MAC address for auto-reconnect
+        this.lastConnectedMacAddress = device.getAddress();
+        Log.i(LOG_TAG, "Connected to device, saved MAC for auto-reconnect: " + lastConnectedMacAddress);
     }
 
     @Override
@@ -158,112 +270,12 @@ public class BLEPrinterAdapter implements PrinterAdapter {
             e.printStackTrace();
         }
 
+        // Clear cached OutputStream from base class
+        clearOutputStream();
+
         if (this.mBluetoothDevice != null) {
             this.mBluetoothDevice = null;
         }
-    }
-
-    @Override
-    public void printRawData(String rawBase64Data, Callback errorCallback) {
-        if (this.mBluetoothSocket == null) {
-            errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
-        final String rawData = rawBase64Data;
-        final BluetoothSocket socket = this.mBluetoothSocket;
-        Log.v(LOG_TAG, "start to print raw data " + rawBase64Data);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
-                try {
-                    OutputStream printerOutputStream = socket.getOutputStream();
-                    printerOutputStream.write(bytes, 0, bytes.length);
-                    printerOutputStream.flush();
-                } catch (IOException e) {
-                    Log.e(LOG_TAG, "failed to print data" + rawData);
-                    e.printStackTrace();
-                }
-
-            }
-        }).start();
-    }
-
-
-
-    @Override
-    public void printImageData(String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        final Bitmap bitmapImage = UtilsImage.getBitmapFromURL(imageUrl);
-
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
-        }
-
-        if (this.mBluetoothSocket == null) {
-            errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
-
-        Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
-        final BluetoothSocket socket = this.mBluetoothSocket;
-
-        try {
-            OutputStream printerOutputStream = socket.getOutputStream();
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
-
-            // Send ALL image data in ONE transfer - much faster!
-            printerOutputStream.write(rasterData);
-
-            // Line feed after image
-            printerOutputStream.write(UtilsImage.LINE_FEED);
-
-            printerOutputStream.flush();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "failed to print data");
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void printImageBase64(final Bitmap bitmapImage, int imageWidth, int imageHeight, Callback errorCallback) {
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
-        }
-
-        if (this.mBluetoothSocket == null) {
-            errorCallback.invoke("bluetooth connection is not built, may be you forgot to connectPrinter");
-            return;
-        }
-
-        Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
-        final BluetoothSocket socket = this.mBluetoothSocket;
-
-        try {
-            OutputStream printerOutputStream = socket.getOutputStream();
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            printerOutputStream.write(UtilsImage.CENTER_ALIGN);
-
-            // Send ALL image data in ONE transfer - much faster!
-            printerOutputStream.write(rasterData);
-
-            // Line feed after image
-            printerOutputStream.write(UtilsImage.LINE_FEED);
-
-            printerOutputStream.flush();
-        } catch (IOException e) {
-            Log.e(LOG_TAG, "failed to print data");
-            e.printStackTrace();
-        }
+        // Note: Do NOT clear lastConnectedMacAddress here - we need it for reconnect
     }
 }

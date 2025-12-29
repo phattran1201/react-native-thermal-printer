@@ -64,12 +64,18 @@ public class USBPrinterAdapter implements PrinterAdapter {
             String action = intent.getAction();
             if (ACTION_USB_PERMISSION.equals(action)) {
                 synchronized (this) {
-                    UsbDevice usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    UsbDevice usbDevice;
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
+                    } else {
+                        usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    }
                     if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
                         if (usbDevice != null) {
                             Log.i(LOG_TAG,
-                                    "success to grant permission for device " + usbDevice.getDeviceId() + ", vendor_id: "
-                                            + usbDevice.getVendorId() + " product_id: " + usbDevice.getProductId());
+                                    "success to grant permission for device " + usbDevice.getDeviceId()
+                                            + ", vendor_id: " + usbDevice.getVendorId() + " product_id: "
+                                            + usbDevice.getProductId());
                             mUsbDevice = usbDevice;
 
                             // Call pending success callback
@@ -103,8 +109,12 @@ public class USBPrinterAdapter implements PrinterAdapter {
                     || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
 
                 // Get the attached device
-                UsbDevice attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-
+                UsbDevice attachedDevice;
+                if (android.os.Build.VERSION.SDK_INT >= 33) {
+                    attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
+                } else {
+                    attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                }
                 // Auto request permission if this is the previously selected printer
                 if (attachedDevice != null && selectedVendorId > 0 && selectedProductId > 0) {
                     if (attachedDevice.getVendorId() == selectedVendorId
@@ -134,13 +144,23 @@ public class USBPrinterAdapter implements PrinterAdapter {
     public void init(ReactApplicationContext reactContext, Callback successCallback, Callback errorCallback) {
         this.mContext = reactContext;
         this.mUSBManager = (UsbManager) this.mContext.getSystemService(Context.USB_SERVICE);
+        // int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        // if (Build.VERSION.SDK_INT >= 34) {
+        // flags |= PendingIntent.FLAG_IMMUTABLE;
+        // } else {
+        // flags |= PendingIntent.FLAG_MUTABLE;
+        // }
+        // this.mPermissionIndent = PendingIntent.getBroadcast(mContext, 0, new
+        // Intent(ACTION_USB_PERMISSION), flags);
+
+        Intent permIntent = new Intent(ACTION_USB_PERMISSION);
+        permIntent.setPackage(mContext.getPackageName());
         int flags = PendingIntent.FLAG_UPDATE_CURRENT;
-        if (Build.VERSION.SDK_INT >= 34) {
-            flags |= PendingIntent.FLAG_IMMUTABLE;
-        } else {
+        if (Build.VERSION.SDK_INT >= 31) { // 31+
             flags |= PendingIntent.FLAG_MUTABLE;
         }
-        this.mPermissionIndent = PendingIntent.getBroadcast(mContext, 0, new Intent(ACTION_USB_PERMISSION), flags);
+
+        this.mPermissionIndent = PendingIntent.getBroadcast(mContext, 0, permIntent, flags);
 
         IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
         filter.addAction(UsbManager.ACTION_USB_DEVICE_DETACHED);
@@ -157,9 +177,11 @@ public class USBPrinterAdapter implements PrinterAdapter {
 
     public void closeConnectionIfExists() {
         if (mUsbDeviceConnection != null) {
-            mUsbDeviceConnection.releaseInterface(mUsbInterface);
+            if (mUsbInterface != null) {
+                mUsbDeviceConnection.releaseInterface(mUsbInterface);
+                mUsbInterface = null;
+            }
             mUsbDeviceConnection.close();
-            mUsbInterface = null;
             mEndPoint = null;
             mUsbDeviceConnection = null;
         }
@@ -173,9 +195,44 @@ public class USBPrinterAdapter implements PrinterAdapter {
         }
 
         for (UsbDevice usbDevice : mUSBManager.getDeviceList().values()) {
-            lists.add(new USBPrinterDevice(usbDevice));
+            if (isPrinterDevice(usbDevice)) {
+                lists.add(new USBPrinterDevice(usbDevice));
+            }
         }
         return lists;
+    }
+
+    /**
+     * Check if USB device is a printer. Filters by USB device class (0x07 =
+     * Printer) or interface class.
+     */
+    private boolean isPrinterDevice(UsbDevice usbDevice) {
+        // USB Printer Class = 7 (0x07)
+        final int USB_CLASS_PRINTER = 7;
+
+        // Check device class
+        if (usbDevice.getDeviceClass() == USB_CLASS_PRINTER) {
+            return true;
+        }
+
+        // Some printers report class at interface level, not device level
+        // Check all interfaces for printer class
+        for (int i = 0; i < usbDevice.getInterfaceCount(); i++) {
+            UsbInterface usbInterface = usbDevice.getInterface(i);
+            if (usbInterface.getInterfaceClass() == USB_CLASS_PRINTER) {
+                return true;
+            }
+        }
+
+        // Fallback: check product name for common printer keywords
+        String productName = usbDevice.getProductName();
+        if (productName != null) {
+            String lowerName = productName.toLowerCase();
+            return lowerName.contains("printer") || lowerName.contains("print") || lowerName.contains("pos")
+                    || lowerName.contains("thermal") || lowerName.contains("receipt") || lowerName.contains("label");
+        }
+
+        return false;
     }
 
     @Override
@@ -295,6 +352,10 @@ public class USBPrinterAdapter implements PrinterAdapter {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    if (mUsbDeviceConnection == null || mEndPoint == null) {
+                        Log.e(LOG_TAG, "USB connection or endpoint is null");
+                        return;
+                    }
                     byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
                     int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
                     Log.i(LOG_TAG, "Return Status: b-->" + b);
@@ -306,8 +367,6 @@ public class USBPrinterAdapter implements PrinterAdapter {
             errorCallback.invoke(msg);
         }
     }
-
-
 
     @Override
     public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
@@ -321,13 +380,18 @@ public class USBPrinterAdapter implements PrinterAdapter {
         Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
         boolean isConnected = openConnection();
         if (isConnected) {
+            if (mUsbDeviceConnection == null || mEndPoint == null) {
+                errorCallback.invoke("USB connection or endpoint is null");
+                return;
+            }
             Log.v(LOG_TAG, "Connected to device");
 
             // Prepare image raster data using shared utility
             byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
             // Center align before printing
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length, 100000);
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length,
+                    100000);
 
             // Send ALL image data in ONE bulk transfer - much faster!
             mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
@@ -352,13 +416,18 @@ public class USBPrinterAdapter implements PrinterAdapter {
         Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
         boolean isConnected = openConnection();
         if (isConnected) {
+            if (mUsbDeviceConnection == null || mEndPoint == null) {
+                errorCallback.invoke("USB connection or endpoint is null");
+                return;
+            }
             Log.v(LOG_TAG, "Connected to device");
 
             // Prepare image raster data using shared utility
             byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
 
             // Center align before printing
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length, 100000);
+            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length,
+                    100000);
 
             // Send ALL image data in ONE bulk transfer - much faster!
             mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
