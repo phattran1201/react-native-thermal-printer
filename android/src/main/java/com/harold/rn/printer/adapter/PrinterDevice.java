@@ -1,8 +1,5 @@
 package com.harold.rn.printer.adapter;
 
-import android.hardware.usb.UsbDevice;
-
-import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.WritableMap;
 
 public interface PrinterDevice {

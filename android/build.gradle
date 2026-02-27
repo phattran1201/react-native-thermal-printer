@@ -1,6 +1,25 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:8.13.2")
+    }
+}
+
 apply plugin: 'com.android.library'
 
+repositories {
+    google()
+    mavenCentral()
+    maven {
+        url("$rootDir/../node_modules/react-native/android")
+    }
+}
+
 android {
+    namespace "com.harold.rn.printer"
     compileSdkVersion 34
 
     defaultConfig {

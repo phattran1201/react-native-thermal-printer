@@ -13,10 +13,8 @@ import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbEndpoint;
 import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
-import android.util.Base64;
 import android.util.Log;
 import android.widget.Toast;
-import android.graphics.Bitmap;
 
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
@@ -25,7 +23,7 @@ import com.facebook.react.modules.core.DeviceEventManagerModule;
 import java.util.ArrayList;
 import java.util.List;
 
-public class USBPrinterAdapter implements PrinterAdapter {
+public class USBPrinterAdapter extends BasePrinterAdapter {
     @SuppressLint("StaticFieldLeak")
     private static USBPrinterAdapter mInstance;
 
@@ -61,82 +59,91 @@ public class USBPrinterAdapter implements PrinterAdapter {
     private final BroadcastReceiver mUsbDeviceReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (ACTION_USB_PERMISSION.equals(action)) {
-                synchronized (this) {
-                    UsbDevice usbDevice;
-                    if (android.os.Build.VERSION.SDK_INT >= 33) {
-                        usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
-                    } else {
-                        usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                    }
-                    if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
-                        if (usbDevice != null) {
-                            Log.i(LOG_TAG,
-                                    "success to grant permission for device " + usbDevice.getDeviceId()
-                                            + ", vendor_id: " + usbDevice.getVendorId() + " product_id: "
-                                            + usbDevice.getProductId());
-                            mUsbDevice = usbDevice;
+            if (intent == null) {
+                Log.w(LOG_TAG, "USB intent is null");
+                return;
+            }
 
-                            // Call pending success callback
-                            if (pendingSuccessCallback != null) {
-                                pendingSuccessCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
+            try {
+                String action = intent.getAction();
+                if (ACTION_USB_PERMISSION.equals(action)) {
+                    synchronized (this) {
+                        UsbDevice usbDevice;
+                        if (android.os.Build.VERSION.SDK_INT >= 33) {
+                            usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
+                        } else {
+                            usbDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                        }
+                        if (intent.getBooleanExtra(UsbManager.EXTRA_PERMISSION_GRANTED, false)) {
+                            if (usbDevice != null) {
+                                Log.i(LOG_TAG,
+                                        "success to grant permission for device " + usbDevice.getDeviceId()
+                                                + ", vendor_id: " + usbDevice.getVendorId() + " product_id: "
+                                                + usbDevice.getProductId());
+                                mUsbDevice = usbDevice;
+
+                                // Call pending success callback
+                                if (pendingSuccessCallback != null) {
+                                    pendingSuccessCallback.invoke(new USBPrinterDevice(usbDevice).toRNWritableMap());
+                                    pendingSuccessCallback = null;
+                                    pendingErrorCallback = null;
+                                }
+                            }
+                        } else {
+                            String errorMsg = "User refused USB device permissions";
+                            if (usbDevice != null) {
+                                errorMsg += ": " + usbDevice.getDeviceName();
+                            }
+                            Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show();
+
+                            // Call pending error callback
+                            if (pendingErrorCallback != null) {
+                                pendingErrorCallback.invoke(errorMsg);
                                 pendingSuccessCallback = null;
                                 pendingErrorCallback = null;
                             }
                         }
+                    }
+                } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
+                    if (mUsbDevice != null) {
+                        Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
+                        closeConnectionIfExists();
+                    }
+                } else if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action)
+                        || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
+
+                    // Get the attached device
+                    UsbDevice attachedDevice;
+                    if (android.os.Build.VERSION.SDK_INT >= 33) {
+                        attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
                     } else {
-                        String errorMsg = "User refused USB device permissions";
-                        if (usbDevice != null) {
-                            errorMsg += ": " + usbDevice.getDeviceName();
-                        }
-                        Toast.makeText(context, errorMsg, Toast.LENGTH_LONG).show();
-
-                        // Call pending error callback
-                        if (pendingErrorCallback != null) {
-                            pendingErrorCallback.invoke(errorMsg);
-                            pendingSuccessCallback = null;
-                            pendingErrorCallback = null;
+                        attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
+                    }
+                    // Auto request permission if this is the previously selected printer
+                    if (attachedDevice != null && selectedVendorId > 0 && selectedProductId > 0) {
+                        if (attachedDevice.getVendorId() == selectedVendorId
+                                && attachedDevice.getProductId() == selectedProductId) {
+                            Log.i(LOG_TAG, "Previously selected printer reconnected, requesting permission...");
+                            if (!mUSBManager.hasPermission(attachedDevice)) {
+                                mUSBManager.requestPermission(attachedDevice, mPermissionIndent);
+                            } else {
+                                mUsbDevice = attachedDevice;
+                                Log.i(LOG_TAG, "Permission already granted for reconnected device");
+                            }
                         }
                     }
-                }
-            } else if (UsbManager.ACTION_USB_DEVICE_DETACHED.equals(action)) {
-                if (mUsbDevice != null) {
-                    Toast.makeText(context, "USB device has been turned off", Toast.LENGTH_LONG).show();
-                    closeConnectionIfExists();
-                }
-            } else if (UsbManager.ACTION_USB_ACCESSORY_ATTACHED.equals(action)
-                    || UsbManager.ACTION_USB_DEVICE_ATTACHED.equals(action)) {
 
-                // Get the attached device
-                UsbDevice attachedDevice;
-                if (android.os.Build.VERSION.SDK_INT >= 33) {
-                    attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE, UsbDevice.class);
-                } else {
-                    attachedDevice = intent.getParcelableExtra(UsbManager.EXTRA_DEVICE);
-                }
-                // Auto request permission if this is the previously selected printer
-                if (attachedDevice != null && selectedVendorId > 0 && selectedProductId > 0) {
-                    if (attachedDevice.getVendorId() == selectedVendorId
-                            && attachedDevice.getProductId() == selectedProductId) {
-                        Log.i(LOG_TAG, "Previously selected printer reconnected, requesting permission...");
-                        if (!mUSBManager.hasPermission(attachedDevice)) {
-                            mUSBManager.requestPermission(attachedDevice, mPermissionIndent);
-                        } else {
-                            mUsbDevice = attachedDevice;
-                            Log.i(LOG_TAG, "Permission already granted for reconnected device");
+                    // Always emit event to JS
+                    synchronized (this) {
+                        if (mContext != null) {
+                            ((ReactApplicationContext) mContext)
+                                    .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
+                                    .emit(EVENT_USB_DEVICE_ATTACHED, null);
                         }
                     }
                 }
-
-                // Always emit event to JS
-                synchronized (this) {
-                    if (mContext != null) {
-                        ((ReactApplicationContext) mContext)
-                                .getJSModule(DeviceEventManagerModule.RCTDeviceEventEmitter.class)
-                                .emit(EVENT_USB_DEVICE_ATTACHED, null);
-                    }
-                }
+            } catch (Throwable t) {
+                Log.e(LOG_TAG, "USB broadcast handling failed", t);
             }
         }
     };
@@ -229,7 +236,8 @@ public class USBPrinterAdapter implements PrinterAdapter {
         if (productName != null) {
             String lowerName = productName.toLowerCase();
             return lowerName.contains("printer") || lowerName.contains("print") || lowerName.contains("pos")
-                    || lowerName.contains("thermal") || lowerName.contains("receipt") || lowerName.contains("label");
+                    || lowerName.contains("thermal") || lowerName.contains("receipt") || lowerName.contains("label")
+                    || lowerName.contains("virtual");
         }
 
         return false;
@@ -340,105 +348,60 @@ public class USBPrinterAdapter implements PrinterAdapter {
                 }
             }
         }
-        return true;
+        Log.e(LOG_TAG, "no bulk OUT endpoint found for device");
+        return false;
     }
 
-    public void printRawData(String data, Callback errorCallback) {
-        final String rawData = data;
-        Log.v(LOG_TAG, "start to print raw data " + data);
-        boolean isConnected = openConnection();
-        if (isConnected) {
-            Log.v(LOG_TAG, "Connected to device");
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    if (mUsbDeviceConnection == null || mEndPoint == null) {
-                        Log.e(LOG_TAG, "USB connection or endpoint is null");
-                        return;
-                    }
-                    byte[] bytes = Base64.decode(rawData, Base64.DEFAULT);
-                    int b = mUsbDeviceConnection.bulkTransfer(mEndPoint, bytes, bytes.length, 100000);
-                    Log.i(LOG_TAG, "Return Status: b-->" + b);
+    @Override
+    protected String getLogTag() {
+        return LOG_TAG;
+    }
+
+    @Override
+    protected boolean isConnectionValid() {
+        return mUsbDeviceConnection != null && mEndPoint != null;
+    }
+
+    @Override
+    protected String getConnectionErrorMessage() {
+        return "USB connection is not built, may be you forgot to connectPrinter";
+    }
+
+    @Override
+    protected boolean tryReconnect() {
+        if (mUsbDevice != null) {
+            return openConnection();
+        }
+        return false;
+    }
+
+    @Override
+    protected java.io.OutputStream getRawOutputStream() throws java.io.IOException {
+        if (mUsbDeviceConnection == null || mEndPoint == null) {
+            return null;
+        }
+        return new java.io.OutputStream() {
+            @Override
+            public void write(int b) throws java.io.IOException {
+                write(new byte[]{(byte) b}, 0, 1);
+            }
+
+            @Override
+            public void write(byte[] b, int off, int len) throws java.io.IOException {
+                if (mUsbDeviceConnection == null || mEndPoint == null) {
+                    throw new java.io.IOException("USB connection lost");
                 }
-            }).start();
-        } else {
-            String msg = "failed to connected to device";
-            Log.v(LOG_TAG, msg);
-            errorCallback.invoke(msg);
-        }
-    }
-
-    @Override
-    public void printImageData(final String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        final Bitmap bitmapImage = UtilsImage.getBitmapFromURL(imageUrl);
-
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
-        }
-
-        Log.v(LOG_TAG, "start to print image data (fast raster mode) " + bitmapImage);
-        boolean isConnected = openConnection();
-        if (isConnected) {
-            if (mUsbDeviceConnection == null || mEndPoint == null) {
-                errorCallback.invoke("USB connection or endpoint is null");
-                return;
+                byte[] chunk;
+                if (off == 0 && len == b.length) {
+                    chunk = b;
+                } else {
+                    chunk = java.util.Arrays.copyOfRange(b, off, off + len);
+                }
+                int sent = mUsbDeviceConnection.bulkTransfer(mEndPoint, chunk, len, 100000);
+                if (sent <= 0) {
+                    throw new java.io.IOException("USB bulkTransfer failed with status " + sent);
+                }
             }
-            Log.v(LOG_TAG, "Connected to device");
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length,
-                    100000);
-
-            // Send ALL image data in ONE bulk transfer - much faster!
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
-
-            // Line feed after image
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.LINE_FEED, UtilsImage.LINE_FEED.length, 100000);
-        } else {
-            String msg = "failed to connected to device";
-            Log.v(LOG_TAG, msg);
-            errorCallback.invoke(msg);
-        }
-
-    }
-
-    @Override
-    public void printImageBase64(final Bitmap bitmapImage, int imageWidth, int imageHeight, Callback errorCallback) {
-        if (bitmapImage == null) {
-            errorCallback.invoke("image not found");
-            return;
-        }
-
-        Log.v(LOG_TAG, "start to print image base64 (fast raster mode) " + bitmapImage);
-        boolean isConnected = openConnection();
-        if (isConnected) {
-            if (mUsbDeviceConnection == null || mEndPoint == null) {
-                errorCallback.invoke("USB connection or endpoint is null");
-                return;
-            }
-            Log.v(LOG_TAG, "Connected to device");
-
-            // Prepare image raster data using shared utility
-            byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-            // Center align before printing
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.CENTER_ALIGN, UtilsImage.CENTER_ALIGN.length,
-                    100000);
-
-            // Send ALL image data in ONE bulk transfer - much faster!
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, rasterData, rasterData.length, 100000);
-
-            // Line feed after image
-            mUsbDeviceConnection.bulkTransfer(mEndPoint, UtilsImage.LINE_FEED, UtilsImage.LINE_FEED.length, 100000);
-        } else {
-            String msg = "failed to connected to device";
-            Log.v(LOG_TAG, msg);
-            errorCallback.invoke(msg);
-        }
-
+        };
     }
 }

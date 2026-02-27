@@ -1,31 +1,20 @@
 package com.harold.rn.printer;
 
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.util.Base64;
-
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Callback;
 import com.facebook.react.bridge.ReactApplicationContext;
-import com.facebook.react.bridge.ReactContextBaseJavaModule;
 import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.WritableArray;
-import com.harold.rn.printer.adapter.PrinterAdapter;
 import com.harold.rn.printer.adapter.PrinterDevice;
 import com.harold.rn.printer.adapter.USBPrinterAdapter;
 import com.harold.rn.printer.adapter.USBPrinterDeviceId;
 
 import java.util.List;
 
-public class RNUSBPrinterModule extends ReactContextBaseJavaModule implements RNPrinterModule {
-
-    protected ReactApplicationContext reactContext;
-
-    protected PrinterAdapter adapter;
+public class RNUSBPrinterModule extends RNBasePrinterModule {
 
     public RNUSBPrinterModule(ReactApplicationContext reactContext) {
         super(reactContext);
-        this.reactContext = reactContext;
     }
 
     @ReactMethod
@@ -59,57 +48,29 @@ public class RNUSBPrinterModule extends ReactContextBaseJavaModule implements RN
         }
     }
 
+
+
+    @ReactMethod
+    public void connectPrinter(Integer vendorId, Integer productId, Callback successCallback, Callback errorCallback) {
+        adapter.selectDevice(USBPrinterDeviceId.valueOf(vendorId, productId), successCallback, errorCallback);
+    }
+
     @ReactMethod
     @Override
     public void printRawData(String base64Data, Callback errorCallback) {
-        adapter.printRawData(base64Data, errorCallback);
+        super.printRawData(base64Data, errorCallback);
     }
 
     @ReactMethod
     @Override
     public void printImageData(String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        adapter.printImageData(imageUrl, imageWidth, imageHeight, errorCallback);
+        super.printImageData(imageUrl, imageWidth, imageHeight, errorCallback);
     }
 
     @ReactMethod
     @Override
-    public void printImageBase64(String base64, int imageWidth, int imageHeight, Callback errorCallback) {
-        try {
-            // Remove data URI prefix if present (e.g., "data:image/png;base64,")
-            String base64Data = base64;
-            if (base64Data != null && base64Data.contains(",")) {
-                base64Data = base64Data.substring(base64Data.indexOf(",") + 1);
-            }
-
-            // Remove any whitespace, newlines, or carriage returns that may cause "bad base64" error
-            if (base64Data != null) {
-                base64Data = base64Data.replaceAll("\\s+", "");
-            }
-
-            if (base64Data == null || base64Data.isEmpty()) {
-                errorCallback.invoke("Base64 string is empty or null");
-                return;
-            }
-
-            byte[] decodedString = Base64.decode(base64Data, Base64.DEFAULT);
-            Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-
-            if (decodedByte == null) {
-                errorCallback.invoke("Failed to decode base64 image - invalid image data");
-                return;
-            }
-
-            adapter.printImageBase64(decodedByte, imageWidth, imageHeight, errorCallback);
-        } catch (IllegalArgumentException e) {
-            errorCallback.invoke("Invalid base64 string: " + e.getMessage());
-        } catch (Exception e) {
-            errorCallback.invoke("Error decoding image: " + e.getMessage());
-        }
-    }
-
-    @ReactMethod
-    public void connectPrinter(Integer vendorId, Integer productId, Callback successCallback, Callback errorCallback) {
-        adapter.selectDevice(USBPrinterDeviceId.valueOf(vendorId, productId), successCallback, errorCallback);
+    public void printImageBase64(String base64ImageData, int imageWidth, int imageHeight, Callback errorCallback) {
+        super.printImageBase64(base64ImageData, imageWidth, imageHeight, errorCallback);
     }
 
     @Override

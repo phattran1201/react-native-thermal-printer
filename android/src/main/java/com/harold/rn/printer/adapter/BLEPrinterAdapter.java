@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-public class BLEPrinterAdapter extends BaseStreamPrinterAdapter {
+public class BLEPrinterAdapter extends BasePrinterAdapter {
 
     private static BLEPrinterAdapter mInstance;
 

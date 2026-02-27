@@ -21,7 +21,7 @@ import java.util.List;
 
 import androidx.annotation.RequiresApi;
 
-public class NetPrinterAdapter extends BaseStreamPrinterAdapter {
+public class NetPrinterAdapter extends BasePrinterAdapter {
     private static NetPrinterAdapter mInstance;
     private ReactApplicationContext mContext;
     private final String LOG_TAG = "RNNetPrinter";
