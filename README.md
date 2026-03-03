@@ -302,7 +302,6 @@ The `COMMANDS` object provides a comprehensive set of ESC/POS commands organized
 | ---------- | ------------------------ |
 | LS_DEFAULT | Default line spacing     |
 | LS_SET     | Set line spacing         |
-| LS_SET1    | Alternative line spacing |
 
 #### Hardware Control
 
