@@ -90,7 +90,7 @@ yarn add @haroldtran/react-native-thermal-printer
 ### 🧾 Print Columns Text
 
 ```tsx
-import Printer, { COMMANDS, ColumnAlignment } from '@haroldtran/react-native-thermal-printer';
+import Printer, { COMMANDS } from '@haroldtran/react-native-thermal-printer';
 
 const handlePrint = async () => {
   try {
@@ -103,7 +103,7 @@ const handlePrint = async () => {
       ['2. BLOUSE ROPOL VIRAL MUSLIMAH FASHION ', 'x4222', '12.333.500$'],
       ['3. Women Crew Neck Button Down Ruffle Collar Loose Blouse', 'x1', '30000000000000$'],
     ];
-    let columnAlignment = [ColumnAlignment.LEFT, ColumnAlignment.CENTER, ColumnAlignment.RIGHT];
+    let columnAlignment = ['left', 'center', 'right']; // Alignment string (use ColumnAlignment enum is deprecated)
     let columnWidth = [48 - (7 + 12), 7, 12];
     const header = ['Product list', 'Qty', 'Price'];
     Printer.printImage('https://i.ibb.co/21dsjpLx/image-23-2.png', { imageWidth: 400 });
@@ -246,7 +246,7 @@ Each printer module (`USBPrinter`, `BLEPrinter`, `NetPrinter`) supports the foll
 | `printImage(imgUrl: string, opts?: PrinterImageOptions)`                                                                                      | Print an image from a URL.                                   |
 | `printImageBase64(base64: string, opts?: PrinterImageOptions)`                                                                                | Print an image from a Base64 string.                         |
 | `printRaw(text: string)`                                                                                                                      | Print raw ESC/POS commands (Android only).                   |
-| `printColumnsText(texts: string[], columnWidth: number[], columnAlignment: ColumnAlignment[], columnStyle?: string[], opts?: PrinterOptions)` | Print text in columns.                                       |
+| `printColumnsText(texts: string[], columnWidth: number[], columnAlignment: Alignment[], columnStyle?: string[], opts?: PrinterOptions)` | Print text in columns. `Alignment` = `"left" \| "center" \| "right"` |
 
 ### Specific Connection Methods
 

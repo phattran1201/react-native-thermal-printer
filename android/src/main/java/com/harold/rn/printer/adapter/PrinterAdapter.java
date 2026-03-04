@@ -19,7 +19,7 @@ public interface PrinterAdapter {
 
     public void printRawData(String rawBase64Data, Callback errorCallback);
 
-    public void printImageData(String imageUrl, int imageWidth, int imageHeight, Callback errorCallback);
+    public void printImageData(String imageUrl, int imageWidth, String align, Callback errorCallback);
 
-    public void printImageBase64(Bitmap imageUrl, int imageWidth, int imageHeight, Callback errorCallback);
+    public void printImageBase64(Bitmap imageUrl, int imageWidth, String align, Callback errorCallback);
 }

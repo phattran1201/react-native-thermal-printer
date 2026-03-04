@@ -38,9 +38,9 @@ public abstract class RNBasePrinterModule extends ReactContextBaseJavaModule imp
 
     @ReactMethod
     @Override
-    public void printImageData(String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
+    public void printImageData(String imageUrl, int imageWidth, String align, Callback errorCallback) {
         if (adapter != null) {
-            adapter.printImageData(imageUrl, imageWidth, imageHeight, errorCallback);
+            adapter.printImageData(imageUrl, imageWidth, align, errorCallback);
         } else {
             errorCallback.invoke("Printer adapter is not initialized");
         }
@@ -48,12 +48,12 @@ public abstract class RNBasePrinterModule extends ReactContextBaseJavaModule imp
 
     @ReactMethod
     @Override
-    public void printImageBase64(String base64ImageData, int imageWidth, int imageHeight, Callback errorCallback) {
+    public void printImageBase64(String base64ImageData, int imageWidth, String align, Callback errorCallback) {
         if (adapter != null) {
             try {
                 byte[] decodedString = Base64.decode(base64ImageData, Base64.DEFAULT);
                 Bitmap decodedByte = BitmapFactory.decodeByteArray(decodedString, 0, decodedString.length);
-                adapter.printImageBase64(decodedByte, imageWidth, imageHeight, errorCallback);
+                adapter.printImageBase64(decodedByte, imageWidth, align, errorCallback);
             } catch (Exception e) {
                 errorCallback.invoke("Failed to decode base64 image: " + e.getMessage());
             }

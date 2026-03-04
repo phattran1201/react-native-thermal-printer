@@ -20,6 +20,16 @@ export const PrinterWidth: Record<IPaperWidth, IPrinterWidth> = {
   [IPaperWidth["80mm"]]: { width: 576, charPerLine: 48 },
 };
 
+/**
+ * Horizontal alignment for text and image output.
+ * Use this for all alignment needs going forward.
+ */
+export type Alignment = "left" | "center" | "right";
+
+/**
+ * @deprecated Use {@link Alignment} (string literal type) instead.
+ * `ColumnAlignment` will be removed in a future major version.
+ */
 export enum ColumnAlignment {
   LEFT,
   CENTER,

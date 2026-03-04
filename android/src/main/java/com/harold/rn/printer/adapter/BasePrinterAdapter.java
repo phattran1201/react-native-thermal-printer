@@ -140,7 +140,7 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
     }
 
     @Override
-    public void printImageData(final String imageUrl, final int imageWidth, final int imageHeight, final Callback errorCallback) {
+    public void printImageData(final String imageUrl, final int imageWidth, final String align, final Callback errorCallback) {
         mPrintExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -158,11 +158,9 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
                 Log.v(getLogTag(), "start to print image data (fast raster mode)");
 
                 try {
-                    byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-                    sendData(UtilsImage.CENTER_ALIGN);
+                    byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth);
+                    sendData(getAlignCommand(align));
                     sendData(rasterData);
-                    sendData(UtilsImage.LINE_FEED);
                 } catch (Exception e) {
                     Log.e(getLogTag(), "failed to print image data: " + e.getMessage());
                     e.printStackTrace();
@@ -173,7 +171,7 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
     }
 
     @Override
-    public void printImageBase64(final Bitmap bitmapImage, final int imageWidth, final int imageHeight, final Callback errorCallback) {
+    public void printImageBase64(final Bitmap bitmapImage, final int imageWidth, final String align, final Callback errorCallback) {
         mPrintExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -189,11 +187,9 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
                 Log.v(getLogTag(), "start to print image base64 (fast raster mode)");
 
                 try {
-                    byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth, imageHeight);
-
-                    sendData(UtilsImage.CENTER_ALIGN);
+                    byte[] rasterData = UtilsImage.prepareImageRasterData(bitmapImage, imageWidth);
+                    sendData(getAlignCommand(align));
                     sendData(rasterData);
-                    sendData(UtilsImage.LINE_FEED);
                 } catch (Exception e) {
                     Log.e(getLogTag(), "failed to print image base64: " + e.getMessage());
                     e.printStackTrace();
@@ -201,5 +197,15 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
                 }
             }
         });
+    }
+
+    /**
+     * Returns the ESC/POS alignment command byte array for the given align string.
+     * @param align "left" | "right" | "center" (default)
+     */
+    private byte[] getAlignCommand(String align) {
+        if ("left".equals(align)) return UtilsImage.LEFT_ALIGN;
+        if ("right".equals(align)) return UtilsImage.RIGHT_ALIGN;
+        return UtilsImage.CENTER_ALIGN; // "center" or anything else → default center
     }
 }

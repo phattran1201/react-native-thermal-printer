@@ -53,14 +53,14 @@ public class RNNetPrinterModule extends RNBasePrinterModule {
 
     @ReactMethod
     @Override
-    public void printImageData(String imageUrl, int imageWidth, int imageHeight, Callback errorCallback) {
-        super.printImageData(imageUrl, imageWidth, imageHeight, errorCallback);
+    public void printImageData(String imageUrl, int imageWidth, String align, Callback errorCallback) {
+        super.printImageData(imageUrl, imageWidth, align, errorCallback);
     }
 
     @ReactMethod
     @Override
-    public void printImageBase64(String base64ImageData, int imageWidth, int imageHeight, Callback errorCallback) {
-        super.printImageBase64(base64ImageData, imageWidth, imageHeight, errorCallback);
+    public void printImageBase64(String base64ImageData, int imageWidth, String align, Callback errorCallback) {
+        super.printImageBase64(base64ImageData, imageWidth, align, errorCallback);
     }
 
     @Override

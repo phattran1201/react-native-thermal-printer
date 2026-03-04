@@ -3,14 +3,8 @@ export * from "./type";
 export * from "./utils";
 
 import { NativeEventEmitter, NativeModules, Platform } from "react-native";
-import { ColumnAlignment } from "./constant";
-import {
-  IBLEPrinter,
-  INetPrinter,
-  IUSBPrinter,
-  PrinterImageOptions,
-  PrinterOptions,
-} from "./type";
+import { Alignment, ColumnAlignment } from "./constant";
+import { IBLEPrinter, INetPrinter, IUSBPrinter, PrinterImageOptions, PrinterOptions } from "./type";
 import * as EPToolkit from "./utils/EPToolkit";
 import { connectToHost } from "./utils/net-connect";
 import { processColumnText } from "./utils/print-column";
@@ -103,8 +97,7 @@ const USBPrinter = {
       RNUSBPrinter.connectPrinter(
         vendorId,
         productId,
-        (printer: IUSBPrinter) =>
-          resolve({ ...printer, device: JSON.parse(printer.device || "{}") }),
+        (printer: IUSBPrinter) => resolve({ ...printer, device: JSON.parse(printer.device || "{}") }),
         (error: Error) => reject(error),
       ),
     ),
@@ -138,15 +131,10 @@ const USBPrinter = {
         opts?.onError?.(error);
       });
     } else {
-      RNUSBPrinter.printImageData(
-        imgUrl,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNUSBPrinter.printImageData(imgUrl, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
   /**
@@ -161,15 +149,10 @@ const USBPrinter = {
         opts?.onError?.(error);
       });
     } else {
-      RNUSBPrinter.printImageBase64(
-        Base64,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNUSBPrinter.printImageBase64(Base64, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
   /**
@@ -179,9 +162,7 @@ const USBPrinter = {
   printRaw: (text: string): void => {
     if (Platform.OS === "ios") {
     } else {
-      RNUSBPrinter.printRawData(text, (error: Error) =>
-        console.warn("Printer -> ", error),
-      );
+      RNUSBPrinter.printRawData(text, (error: Error) => console.warn("Printer -> ", error));
     }
   },
   /**
@@ -192,16 +173,11 @@ const USBPrinter = {
   printColumnsText: (
     texts: string[],
     columnWidth: number[],
-    columnAlignment: ColumnAlignment[],
+    columnAlignment: (Alignment | ColumnAlignment)[],
     columnStyle: string[],
     opts: PrinterOptions = {},
   ): void => {
-    const result = processColumnText(
-      texts,
-      columnWidth,
-      columnAlignment,
-      columnStyle,
-    );
+    const result = processColumnText(texts, columnWidth, columnAlignment, columnStyle);
     RNUSBPrinter.printRawData(textTo64Buffer(result, opts), (error: Error) => {
       console.warn("Printer -> ", error);
       opts?.onError?.(error);
@@ -236,8 +212,7 @@ const BLEPrinter = {
     new Promise((resolve, reject) =>
       RNBLEPrinter.connectPrinter(
         inner_mac_address,
-        (printer: IBLEPrinter) =>
-          resolve({ ...printer, device: JSON.parse(printer?.device || "{}") }),
+        (printer: IBLEPrinter) => resolve({ ...printer, device: JSON.parse(printer?.device || "{}") }),
         (error: Error) => reject(error),
       ),
     ),
@@ -251,14 +226,10 @@ const BLEPrinter = {
   printText: (text: string, opts: PrinterOptions = {}): void => {
     if (Platform.OS === "ios") {
       const processedText = textPreprocessingIOS(text, false, false);
-      RNBLEPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNBLEPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
       RNBLEPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => {
         console.warn("Printer -> ", error);
@@ -269,19 +240,11 @@ const BLEPrinter = {
 
   printBill: (text: string, opts: PrinterOptions = {}): void => {
     if (Platform.OS === "ios") {
-      const processedText = textPreprocessingIOS(
-        text,
-        opts?.cut ?? true,
-        opts.beep ?? true,
-      );
-      RNBLEPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      const processedText = textPreprocessingIOS(text, opts?.cut ?? true, opts.beep ?? true);
+      RNBLEPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
       RNBLEPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => {
         console.warn("Printer -> ", error);
@@ -304,15 +267,10 @@ const BLEPrinter = {
         opts?.onError?.(error);
       });
     } else {
-      RNBLEPrinter.printImageData(
-        imgUrl,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNBLEPrinter.printImageData(imgUrl, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
   /**
@@ -333,15 +291,10 @@ const BLEPrinter = {
       /**
        * just development
        */
-      RNBLEPrinter.printImageBase64(
-        Base64,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNBLEPrinter.printImageBase64(Base64, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
   /**
@@ -352,17 +305,11 @@ const BLEPrinter = {
     if (Platform.OS === "ios") {
       const processedText = textPreprocessingIOS(text, false, false);
 
-      RNBLEPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        function (error) {
-          return console.warn("Printer -> ", error);
-        },
-      );
+      RNBLEPrinter.printRawData(processedText.text, processedText.opts, function (error) {
+        return console.warn("Printer -> ", error);
+      });
     } else {
-      RNBLEPrinter.printRawData(text, (error: Error) =>
-        console.warn("Printer -> ", error),
-      );
+      RNBLEPrinter.printRawData(text, (error: Error) => console.warn("Printer -> ", error));
     }
   },
   /**
@@ -373,34 +320,22 @@ const BLEPrinter = {
   printColumnsText: (
     texts: string[],
     columnWidth: number[],
-    columnAlignment: ColumnAlignment[],
+    columnAlignment: (Alignment | ColumnAlignment)[],
     columnStyle: string[],
     opts: PrinterOptions = {},
   ): void => {
-    const result = processColumnText(
-      texts,
-      columnWidth,
-      columnAlignment,
-      columnStyle,
-    );
+    const result = processColumnText(texts, columnWidth, columnAlignment, columnStyle);
     if (Platform.OS === "ios") {
       const processedText = textPreprocessingIOS(result, false, false);
-      RNBLEPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNBLEPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
-      RNBLEPrinter.printRawData(
-        textTo64Buffer(result, opts),
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNBLEPrinter.printRawData(textTo64Buffer(result, opts), (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
 };
@@ -428,11 +363,7 @@ const NetPrinter = {
       ),
     ),
 
-  connectPrinter: (
-    host: string,
-    port: number,
-    timeout?: number,
-  ): Promise<INetPrinter> =>
+  connectPrinter: (host: string, port: number, timeout?: number): Promise<INetPrinter> =>
     new Promise(async (resolve, reject) => {
       try {
         await connectToHost(host, timeout);
@@ -447,9 +378,7 @@ const NetPrinter = {
           (error: Error) => reject(error),
         );
       } catch (error) {
-        reject(
-          error instanceof Error ? error.message : `Connect to ${host} fail`,
-        );
+        reject(error instanceof Error ? error.message : `Connect to ${host} fail`);
       }
     }),
 
@@ -462,14 +391,10 @@ const NetPrinter = {
   printText: (text: string, opts: PrinterOptions = {}): void => {
     if (Platform.OS === "ios") {
       const processedText = textPreprocessingIOS(text, false, false);
-      RNNetPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNNetPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
       RNNetPrinter.printRawData(textTo64Buffer(text, opts), (error: Error) => {
         console.warn("Printer -> ", error);
@@ -480,19 +405,11 @@ const NetPrinter = {
 
   printBill: (text: string, opts: PrinterOptions = {}): void => {
     if (Platform.OS === "ios") {
-      const processedText = textPreprocessingIOS(
-        text,
-        opts?.cut ?? true,
-        opts.beep ?? true,
-      );
-      RNNetPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      const processedText = textPreprocessingIOS(text, opts?.cut ?? true, opts.beep ?? true);
+      RNNetPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
       RNNetPrinter.printRawData(billTo64Buffer(text, opts), (error: Error) => {
         console.warn("Printer -> ", error);
@@ -512,15 +429,10 @@ const NetPrinter = {
         opts?.onError?.(error);
       });
     } else {
-      RNNetPrinter.printImageData(
-        imgUrl,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNNetPrinter.printImageData(imgUrl, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
   /**
@@ -535,15 +447,10 @@ const NetPrinter = {
         opts?.onError?.(error);
       });
     } else {
-      RNNetPrinter.printImageBase64(
-        Base64,
-        opts?.imageWidth ?? 0,
-        opts?.imageHeight ?? 0,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNNetPrinter.printImageBase64(Base64, opts?.imageWidth ?? 0, opts?.align ?? "center", (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
 
@@ -554,9 +461,7 @@ const NetPrinter = {
   printRaw: (text: string): void => {
     if (Platform.OS === "ios") {
     } else {
-      RNNetPrinter.printRawData(text, (error: Error) =>
-        console.warn("Printer -> ", error),
-      );
+      RNNetPrinter.printRawData(text, (error: Error) => console.warn("Printer -> ", error));
     }
   },
 
@@ -568,48 +473,30 @@ const NetPrinter = {
   printColumnsText: (
     texts: string[],
     columnWidth: number[],
-    columnAlignment: ColumnAlignment[],
+    columnAlignment: (Alignment | ColumnAlignment)[],
     columnStyle: string[] = [],
     opts: PrinterOptions = {},
   ): void => {
-    const result = processColumnText(
-      texts,
-      columnWidth,
-      columnAlignment,
-      columnStyle,
-    );
+    const result = processColumnText(texts, columnWidth, columnAlignment, columnStyle);
     if (Platform.OS === "ios") {
       const processedText = textPreprocessingIOS(result, false, false);
-      RNNetPrinter.printRawData(
-        processedText.text,
-        processedText.opts,
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNNetPrinter.printRawData(processedText.text, processedText.opts, (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     } else {
-      RNNetPrinter.printRawData(
-        textTo64Buffer(result, opts),
-        (error: Error) => {
-          console.warn("Printer -> ", error);
-          opts?.onError?.(error);
-        },
-      );
+      RNNetPrinter.printRawData(textTo64Buffer(result, opts), (error: Error) => {
+        console.warn("Printer -> ", error);
+        opts?.onError?.(error);
+      });
     }
   },
 };
 
-const NetPrinterEventEmitter =
-  Platform.OS === "ios"
-    ? new NativeEventEmitter(RNNetPrinter)
-    : new NativeEventEmitter();
+const NetPrinterEventEmitter = Platform.OS === "ios" ? new NativeEventEmitter(RNNetPrinter) : new NativeEventEmitter();
 
 export { BLEPrinter, NetPrinter, NetPrinterEventEmitter, USBPrinter };
-export const DEVICE_PRINTER: Record<
-  string,
-  typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter
-> = {
+export const DEVICE_PRINTER: Record<string, typeof USBPrinter | typeof BLEPrinter | typeof NetPrinter> = {
   usb: USBPrinter,
   ble: BLEPrinter,
   net: NetPrinter,
