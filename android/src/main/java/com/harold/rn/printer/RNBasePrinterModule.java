@@ -12,9 +12,9 @@ import com.facebook.react.bridge.ReactMethod;
 import com.harold.rn.printer.adapter.PrinterAdapter;
 
 /**
- * Base abstract class for printer modules to reduce code duplication.
- * Provides default implementation for printing functions by delegating
- * them to the underlying PrinterAdapter instance.
+ * Base abstract class for printer modules to reduce code duplication. Provides
+ * default implementation for printing functions by delegating them to the
+ * underlying PrinterAdapter instance.
  */
 public abstract class RNBasePrinterModule extends ReactContextBaseJavaModule implements RNPrinterModule {
 

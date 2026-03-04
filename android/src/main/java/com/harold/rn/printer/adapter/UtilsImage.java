@@ -27,6 +27,7 @@ public class UtilsImage {
 
     /**
      * Download bitmap from URL
+     *
      * @param src URL of the image
      * @return Bitmap or null if failed
      */
@@ -194,21 +195,27 @@ public class UtilsImage {
     }
 
     /**
-     * Resize a bitmap to match the target printer width while preserving aspect ratio.
-     * Height is always auto-calculated — the printer renders row-by-row so only width matters.
+     * Resize a bitmap to match the target printer width while preserving aspect
+     * ratio. Height is always auto-calculated — the printer renders row-by-row so
+     * only width matters.
      *
-     * <p>Typical dot widths:</p>
+     * <p>
+     * Typical dot widths:
+     * </p>
      * <ul>
-     *   <li>58mm paper → {@link #PAPER_WIDTH_58MM} (384 dots)</li>
-     *   <li>80mm paper → {@link #PAPER_WIDTH_80MM} (576 dots)</li>
+     * <li>58mm paper → {@link #PAPER_WIDTH_58MM} (384 dots)</li>
+     * <li>80mm paper → {@link #PAPER_WIDTH_80MM} (576 dots)</li>
      * </ul>
      *
-     * @param image      Source bitmap. Returns {@code null} if input is {@code null}.
-     * @param imageWidth Target width in dots. Pass 0 or negative to default to 80mm (576 dots).
+     * @param image      Source bitmap. Returns {@code null} if input is
+     *                   {@code null}.
+     * @param imageWidth Target width in dots. Pass 0 or negative to default to 80mm
+     *                   (576 dots).
      * @return Resized bitmap, or the original if already the correct width.
      */
     public static Bitmap resizeTheImageForPrinting(Bitmap image, int imageWidth) {
-        if (image == null) return null;
+        if (image == null)
+            return null;
 
         int w = image.getWidth();
         int h = image.getHeight();
@@ -217,7 +224,8 @@ public class UtilsImage {
         int targetW = (imageWidth > 0) ? imageWidth : PAPER_WIDTH_80MM;
 
         // Already correct width — skip re-allocation
-        if (w == targetW) return image;
+        if (w == targetW)
+            return image;
 
         // Scale by width only, auto-calculate height to preserve aspect ratio
         float scale = (float) targetW / (float) w;
@@ -341,7 +349,8 @@ public class UtilsImage {
 
     public static int[][] getPixelsSlow(Bitmap image2, int imageWidth, int imageHeight) {
         Bitmap image = resizeTheImageForPrinting(normalizeForPrint(image2), imageWidth);
-        if (image == null) return new int[0][0];
+        if (image == null)
+            return new int[0][0];
 
         int width = image.getWidth();
         int height = image.getHeight();
@@ -355,22 +364,23 @@ public class UtilsImage {
     }
 
     /**
-     * Prepare image for thermal printing using fast raster mode (GS v 0).
-     * This method combines all image processing steps:
-     * 1. Normalize bitmap (white background, ARGB_8888)
-     * 2. Resize to printer width
-     * 3. Calculate optimal threshold using Otsu's method
-     * 4. Convert to raster data using GS v 0 format
+     * Prepare image for thermal printing using fast raster mode (GS v 0). This
+     * method combines all image processing steps: 1. Normalize bitmap (white
+     * background, ARGB_8888) 2. Resize to printer width 3. Calculate optimal
+     * threshold using Otsu's method 4. Convert to raster data using GS v 0 format
      *
      * @param bitmapImage Source bitmap to print
-     * @param imageWidth  Target width in dots (e.g., 576 for 80mm, 384 for 58mm). Pass 0 to default to 80mm.
+     * @param imageWidth  Target width in dots (e.g., 576 for 80mm, 384 for 58mm).
+     *                    Pass 0 to default to 80mm.
      * @return byte[] containing complete raster data ready to send to printer
      */
     public static byte[] prepareImageRasterData(Bitmap bitmapImage, int imageWidth) {
-        // Normalize bitmap (white background, ARGB_8888) then resize to printer dot width
+        // Normalize bitmap (white background, ARGB_8888) then resize to printer dot
+        // width
         Bitmap normalizedBitmap = normalizeForPrint(bitmapImage);
         Bitmap resizedBitmap = resizeTheImageForPrinting(normalizedBitmap, imageWidth);
-        if (resizedBitmap == null) return new byte[0];
+        if (resizedBitmap == null)
+            return new byte[0];
 
         // Calculate optimal binarization threshold using Otsu's method
         int threshold = autoThresholdOtsu(resizedBitmap);

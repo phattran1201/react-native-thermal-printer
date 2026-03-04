@@ -12,9 +12,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Abstract base class for all printer adapters.
- * Provides shared logic for image rasterization, chunk processing, base64 parsing,
- * and automatic connection retry via OutputStream.
+ * Abstract base class for all printer adapters. Provides shared logic for image
+ * rasterization, chunk processing, base64 parsing, and automatic connection
+ * retry via OutputStream.
  */
 public abstract class BasePrinterAdapter implements PrinterAdapter {
 
@@ -140,7 +140,8 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
     }
 
     @Override
-    public void printImageData(final String imageUrl, final int imageWidth, final String align, final Callback errorCallback) {
+    public void printImageData(final String imageUrl, final int imageWidth, final String align,
+            final Callback errorCallback) {
         mPrintExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -171,7 +172,8 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
     }
 
     @Override
-    public void printImageBase64(final Bitmap bitmapImage, final int imageWidth, final String align, final Callback errorCallback) {
+    public void printImageBase64(final Bitmap bitmapImage, final int imageWidth, final String align,
+            final Callback errorCallback) {
         mPrintExecutor.submit(new Runnable() {
             @Override
             public void run() {
@@ -201,11 +203,14 @@ public abstract class BasePrinterAdapter implements PrinterAdapter {
 
     /**
      * Returns the ESC/POS alignment command byte array for the given align string.
+     *
      * @param align "left" | "right" | "center" (default)
      */
     private byte[] getAlignCommand(String align) {
-        if ("left".equals(align)) return UtilsImage.LEFT_ALIGN;
-        if ("right".equals(align)) return UtilsImage.RIGHT_ALIGN;
+        if ("left".equals(align))
+            return UtilsImage.LEFT_ALIGN;
+        if ("right".equals(align))
+            return UtilsImage.RIGHT_ALIGN;
         return UtilsImage.CENTER_ALIGN; // "center" or anything else → default center
     }
 }

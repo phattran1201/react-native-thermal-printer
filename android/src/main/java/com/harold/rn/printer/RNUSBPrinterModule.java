@@ -48,8 +48,6 @@ public class RNUSBPrinterModule extends RNBasePrinterModule {
         }
     }
 
-
-
     @ReactMethod
     public void connectPrinter(Integer vendorId, Integer productId, Callback successCallback, Callback errorCallback) {
         adapter.selectDevice(USBPrinterDeviceId.valueOf(vendorId, productId), successCallback, errorCallback);

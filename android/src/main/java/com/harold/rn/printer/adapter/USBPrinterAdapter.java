@@ -383,7 +383,7 @@ public class USBPrinterAdapter extends BasePrinterAdapter {
         return new java.io.OutputStream() {
             @Override
             public void write(int b) throws java.io.IOException {
-                write(new byte[]{(byte) b}, 0, 1);
+                write(new byte[] { (byte) b }, 0, 1);
             }
 
             @Override

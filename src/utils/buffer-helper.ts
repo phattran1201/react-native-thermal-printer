@@ -1,4 +1,4 @@
-import { Buffer } from "buffer";
+import { Buffer } from 'buffer';
 
 export default class BufferHelper {
   buffers: Buffer[];
@@ -27,8 +27,7 @@ export default class BufferHelper {
 
   toBuffer = (): Buffer => Buffer.concat(this.buffers, this.size);
 
-  toString = (encoding: BufferEncoding): string =>
-    this.toBuffer().toString(encoding);
+  toString = (encoding: BufferEncoding): string => this.toBuffer().toString(encoding);
 
   load = (
     stream: {
@@ -37,12 +36,12 @@ export default class BufferHelper {
     },
     callback: (arg0: null, arg1: Buffer) => void,
   ) => {
-    stream.on("data", (trunk: Buffer) => {
+    stream.on('data', (trunk: Buffer) => {
       this.concat(trunk);
     });
-    stream.on("end", () => {
+    stream.on('end', () => {
       callback(null, this.toBuffer());
     });
-    stream.once("error", callback);
+    stream.once('error', callback);
   };
 }

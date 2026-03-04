@@ -1,5 +1,5 @@
-import { BLEPrinter, NetPrinter, USBPrinter } from ".";
-import { Alignment, ColumnAlignment, EDevicesPrinter, EPrintColumnType, IPaperWidth } from "./constant";
+import { BLEPrinter, NetPrinter, USBPrinter } from '.';
+import { Alignment, ColumnAlignment, EDevicesPrinter, EPrintColumnType, IPaperWidth } from './constant';
 
 /**
  * A flexible discriminated union representing a selected printer device.

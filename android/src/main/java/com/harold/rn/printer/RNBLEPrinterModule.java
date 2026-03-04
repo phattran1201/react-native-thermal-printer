@@ -48,8 +48,6 @@ public class RNBLEPrinterModule extends RNBasePrinterModule {
         }
     }
 
-
-
     @ReactMethod
     public void connectPrinter(String innerAddress, Callback successCallback, Callback errorCallback) {
         adapter.selectDevice(BLEPrinterDeviceId.valueOf(innerAddress), successCallback, errorCallback);
