@@ -46,6 +46,9 @@ public class USBPrinterAdapter extends BasePrinterAdapter {
     private int selectedVendorId = -1;
     private int selectedProductId = -1;
 
+    private static final int USB_WRITE_CHUNK_BYTES = 512;
+    private static final int USB_WRITE_TIMEOUT_MS = 100000;
+
     private USBPrinterAdapter() {
     }
 
@@ -388,18 +391,25 @@ public class USBPrinterAdapter extends BasePrinterAdapter {
 
             @Override
             public void write(byte[] b, int off, int len) throws java.io.IOException {
-                if (mUsbDeviceConnection == null || mEndPoint == null) {
-                    throw new java.io.IOException("USB connection lost");
-                }
-                byte[] chunk;
-                if (off == 0 && len == b.length) {
-                    chunk = b;
-                } else {
-                    chunk = java.util.Arrays.copyOfRange(b, off, off + len);
-                }
-                int sent = mUsbDeviceConnection.bulkTransfer(mEndPoint, chunk, len, 100000);
-                if (sent <= 0) {
-                    throw new java.io.IOException("USB bulkTransfer failed with status " + sent);
+                // Thermal printers buffer only a few KB behind the USB bridge and have no
+                // flow control past it. Small transfers pace the host to the printer; a
+                // 16 KB raster in one transfer overruns it on fast devices and the rest
+                // of the image prints as garbage text. 512 bytes matches the vendor SDKs.
+                int end = off + len;
+                int position = off;
+                while (position < end) {
+                    UsbDeviceConnection connection = mUsbDeviceConnection;
+                    UsbEndpoint endpoint = mEndPoint;
+                    if (connection == null || endpoint == null) {
+                        throw new java.io.IOException("USB connection lost");
+                    }
+                    int size = Math.min(USB_WRITE_CHUNK_BYTES, end - position);
+                    int sent = connection.bulkTransfer(endpoint, b, position, size, USB_WRITE_TIMEOUT_MS);
+                    if (sent <= 0) {
+                        throw new java.io.IOException("USB bulkTransfer failed with status " + sent
+                                + " at offset " + position + " of " + len);
+                    }
+                    position += sent;
                 }
             }
         };
