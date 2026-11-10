@@ -15,7 +15,7 @@ Pod::Spec.new do |s|
   s.source       = { :git => package['repository']['url'], :tag => "v#{s.version}" }
   s.source_files  = "ios/**/*.{h,m}"
   s.requires_arc = true
-  s.ios.vendored_libraries = "ios/PrinterSDK/libPrinterSDK.a"
+  s.ios.vendored_frameworks = "ios/PrinterSDK/PrinterSDK.xcframework"
   s.xcconfig = { 'HEADER_SEARCH_PATHS' => '"${PROJECT_DIR}/PrinterSDK"/**' }
 
   s.dependency 'React'
